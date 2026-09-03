@@ -205,7 +205,7 @@ export function Sidebar({ role, mobileOpen = false, onMobileClose }: SidebarProp
 
   return (
     <>
-      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 border-r border-sidebar-border bg-sidebar lg:flex lg:flex-col">
+      <aside className="fixed left-0 top-0 z-50 hidden h-screen w-64 border-r border-sidebar-border bg-sidebar lg:flex lg:flex-col">
         <div className="border-b border-sidebar-border p-4">
           <Logo />
         </div>
