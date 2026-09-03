@@ -13,6 +13,7 @@ import {
   Settings,
   ScanFace,
   UserCheck,
+  Eye,
 } from "lucide-react";
 import type { Role } from "@prisma/client";
 import type { LucideIcon } from "lucide-react";
@@ -66,6 +67,11 @@ export function Sidebar({ role }: SidebarProps) {
           href: "/dashboard/admin/face-enrollment",
           icon: UserCheck,
           label: "Face Enrollment",
+        },
+        {
+          href: "/dashboard/admin/face-recognition-test",
+          icon: Eye,
+          label: "Face Recognition Test",
         },
         {
           href: "/dashboard/admin/face-recognition",
