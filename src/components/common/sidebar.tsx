@@ -11,6 +11,8 @@ import {
   Clock,
   BarChart3,
   Settings,
+  ScanFace,
+  UserCheck,
 } from "lucide-react";
 import type { Role } from "@prisma/client";
 import type { LucideIcon } from "lucide-react";
@@ -39,31 +41,36 @@ export function Sidebar({ role }: SidebarProps) {
           href: "/dashboard/admin/students",
           icon: Users,
           label: "Students",
-          comingSoon: true,
         },
         {
           href: "/dashboard/admin/lecturers",
           icon: Users2,
           label: "Lecturers",
-          comingSoon: true,
         },
         {
           href: "/dashboard/admin/courses",
           icon: BookOpen,
           label: "Courses",
-          comingSoon: true,
         },
         {
           href: "/dashboard/admin/classrooms",
           icon: Building2,
           label: "Classrooms",
-          comingSoon: true,
         },
         {
           href: "/dashboard/admin/schedules",
           icon: Clock,
           label: "Schedules",
-          comingSoon: true,
+        },
+        {
+          href: "/dashboard/admin/face-enrollment",
+          icon: UserCheck,
+          label: "Face Enrollment",
+        },
+        {
+          href: "/dashboard/admin/face-recognition",
+          icon: ScanFace,
+          label: "Face Detection",
         },
         {
           href: "/dashboard/admin/attendance",
@@ -83,6 +90,11 @@ export function Sidebar({ role }: SidebarProps) {
     if (role === "LECTURER") {
       return [
         ...baseItems,
+        {
+          href: "/dashboard/admin/face-recognition",
+          icon: ScanFace,
+          label: "Face Detection",
+        },
         {
           href: "/dashboard/lecturer/courses",
           icon: BookOpen,
