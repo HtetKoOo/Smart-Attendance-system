@@ -49,16 +49,45 @@ export default async function AdminDashboardPage() {
       {/* Placeholder sections for future features */}
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-card p-6">
-          <h3 className="font-semibold mb-4">Recent Activities</h3>
-          <p className="text-sm text-muted-foreground">
-            Coming soon: Activity feed and system logs
-          </p>
+          <h3 className="font-semibold mb-4">Quick Links</h3>
+          <div className="space-y-2">
+            <a
+              href="/dashboard/admin/students"
+              className="block text-sm text-primary hover:underline"
+            >
+              → Manage Students
+            </a>
+            <a
+              href="/dashboard/admin/lecturers"
+              className="block text-sm text-primary hover:underline"
+            >
+              → Manage Lecturers
+            </a>
+            <a
+              href="/dashboard/admin/courses"
+              className="block text-sm text-primary hover:underline"
+            >
+              → Manage Courses
+            </a>
+            <a
+              href="/dashboard/admin/classrooms"
+              className="block text-sm text-primary hover:underline"
+            >
+              → Manage Classrooms
+            </a>
+            <a
+              href="/dashboard/admin/schedules"
+              className="block text-sm text-primary hover:underline"
+            >
+              → Manage Schedules
+            </a>
+          </div>
         </div>
 
         <div className="rounded-lg border border-border bg-card p-6">
-          <h3 className="font-semibold mb-4">System Status</h3>
+          <h3 className="font-semibold mb-4">Upcoming Features</h3>
           <p className="text-sm text-muted-foreground">
-            Coming soon: System health and performance metrics
+            Coming soon: Attendance analytics, reports, and system settings
           </p>
         </div>
       </div>

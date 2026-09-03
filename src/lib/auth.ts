@@ -8,7 +8,7 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    autoSignIn: true,
+    autoSignIn: false,
   },
   user: {
     additionalFields: {
@@ -16,7 +16,7 @@ export const auth = betterAuth({
         type: "string",
         required: false,
         defaultValue: "STUDENT",
-        input: true,
+        input: false,
       },
     },
   },
