@@ -24,6 +24,12 @@ interface StudentFormData {
   [key: string]: string | undefined;
 }
 
+interface UnlinkedUser {
+  id: string;
+  name: string;
+  email: string;
+}
+
 function useStudents(page: number, search: string) {
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -85,6 +91,7 @@ export function StudentManagementContent() {
   const [showForm, setShowForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [deleteStudent, setDeleteStudent] = useState<Student | null>(null);
+  const [unlinkedUsers, setUnlinkedUsers] = useState<UnlinkedUser[]>([]);
 
   const {
     students,
@@ -95,9 +102,21 @@ export function StudentManagementContent() {
     setError,
   } = useStudents(page, search);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     setEditingStudent(null);
+    setError("");
     setShowForm(true);
+
+    try {
+      const response = await fetch("/api/admin/unlinked-users");
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to fetch registered accounts");
+      }
+      setUnlinkedUsers(result.data);
+    } catch (err) {
+      setError((err as Error).message);
+    }
   };
 
   const handleEdit = (student: Student) => {
@@ -182,7 +201,7 @@ export function StudentManagementContent() {
         </div>
         <Button onClick={handleAdd} size="sm">
           <Plus className="mr-2 size-4" />
-          Add Student
+          Link Registered Student
         </Button>
       </div>
 
@@ -249,12 +268,28 @@ export function StudentManagementContent() {
 
       {showForm && (
         <FormDialog
-          title={editingStudent ? "Edit Student" : "Add Student"}
-          fields={[
-            { name: "name", label: "Full Name", required: true },
-            { name: "email", label: "Email", type: "email", required: true },
-            { name: "studentId", label: "Student ID", required: true },
-          ]}
+          title={editingStudent ? "Edit Student" : "Link Registered Student"}
+          fields={
+            editingStudent
+              ? [
+                  { name: "name", label: "Full Name", required: true },
+                  { name: "email", label: "Email", type: "email", required: true },
+                  { name: "studentId", label: "Student ID", required: true },
+                ]
+              : [
+                  {
+                    name: "userId",
+                    label: "Registered Account",
+                    type: "select",
+                    required: true,
+                    options: unlinkedUsers.map((user) => ({
+                      value: user.id,
+                      label: `${user.name} (${user.email})`,
+                    })),
+                  },
+                  { name: "studentId", label: "Student ID", required: true },
+                ]
+          }
           initialData={
             editingStudent
               ? {

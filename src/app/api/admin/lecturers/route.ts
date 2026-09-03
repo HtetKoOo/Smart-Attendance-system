@@ -64,27 +64,30 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create a new lecturer
+// POST - Link a registered account to a new lecturer profile.
 export async function POST(request: NextRequest) {
   try {
     await requireRole("ADMIN");
 
-    const body = await request.json();
-    const { name, email, lecturerId } = body;
-
-    if (!name || !email || !lecturerId) {
-      return NextResponse.json(
-        { error: "Name, email, and lecturer ID are required" },
-        { status: 400 },
-      );
+    const contentLength = Number(request.headers.get("content-length") || 0);
+    if (contentLength > 4096) {
+      return NextResponse.json({ error: "Request body is too large" }, { status: 413 });
     }
 
-    // Check if email already exists
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
+    const body = await request.json();
+    if (
+      !body ||
+      typeof body !== "object" ||
+      Object.keys(body).some((key) => !["userId", "lecturerId"].includes(key))
+    ) {
+      return NextResponse.json({ error: "Invalid request fields" }, { status: 400 });
+    }
+    const { userId, lecturerId } = body;
+
+    if (!userId || !lecturerId || typeof userId !== "string" || typeof lecturerId !== "string") {
       return NextResponse.json(
-        { error: "Email already exists" },
-        { status: 409 },
+        { error: "Registered account and lecturer ID are required" },
+        { status: 400 },
       );
     }
 
@@ -99,14 +102,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create user and lecturer in a transaction
+    // Promote only a normal registered account without an existing profile.
     const lecturer = await prisma.$transaction(async (tx) => {
-      const user = await tx.user.create({
-        data: {
-          name,
-          email,
-          role: "LECTURER",
+      const user = await tx.user.findFirst({
+        where: {
+          id: userId,
+          role: "STUDENT",
+          student: null,
+          lecturer: null,
+          accounts: {
+            some: {
+              providerId: "credential",
+              password: { not: null },
+            },
+          },
         },
+      });
+
+      if (!user) {
+        throw new Error("Registered account is unavailable or already linked");
+      }
+
+      await tx.user.update({
+        where: { id: user.id },
+        data: { role: "LECTURER" },
       });
 
       return tx.lecturer.create({
@@ -124,6 +143,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof Error && error.message.includes("Unauthorized")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (error instanceof Error && error.message.includes("Forbidden")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    if (error instanceof Error && error.message.includes("unavailable or already linked")) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
     }
     console.error("Error creating lecturer:", error);
     return NextResponse.json(
