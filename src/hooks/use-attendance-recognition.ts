@@ -36,13 +36,11 @@ export interface RecognitionResult {
   statusMessage: string;
 }
 
-export interface UseFaceRecognitionResult {
+export interface UseAttendanceRecognitionResult {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   isModelLoading: boolean;
   isModelReady: boolean;
   modelError: string | null;
-  templatesLoading: boolean;
-  templateCount: number;
   result: RecognitionResult;
 }
 
@@ -53,10 +51,11 @@ function getConfidenceLabel(distance: number): string {
   return "Low";
 }
 
-export function useFaceRecognition(
+export function useAttendanceRecognition(
   videoRef: React.RefObject<HTMLVideoElement | null>,
   isCameraActive: boolean,
-): UseFaceRecognitionResult {
+  templates: RecognitionTemplate[],
+): UseAttendanceRecognitionResult {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const faceapiRef = useRef<typeof FaceApiTypes | null>(null);
   const animationFrameIdRef = useRef<number | null>(null);
@@ -69,10 +68,6 @@ export function useFaceRecognition(
   const [isModelLoading, setIsModelLoading] = useState(true);
   const [isModelReady, setIsModelReady] = useState(false);
   const [modelError, setModelError] = useState<string | null>(null);
-
-  const [templatesLoading, setTemplatesLoading] = useState(true);
-  const templatesRef = useRef<RecognitionTemplate[]>([]);
-  const [templateCount, setTemplateCount] = useState(0);
 
   const [activeResult, setActiveResult] = useState<RecognitionResult>({
     state: "idle",
@@ -118,50 +113,12 @@ export function useFaceRecognition(
     };
   }, []);
 
-  // ── Load enrolled templates from ADMIN-only API on mount ──────────────────
-  // Templates are fetched once: the ADMIN-protected endpoint returns stored
-  // 128-D embeddings. Live descriptors are computed locally and never sent
-  // to the server.
-  useEffect(() => {
-    let ignore = false;
-
-    async function run() {
-      setTemplatesLoading(true);
-      try {
-        const res = await fetch("/api/admin/face-recognition-templates");
-        if (ignore) return;
-        if (!res.ok) {
-          templatesRef.current = [];
-          setTemplateCount(0);
-          return;
-        }
-        const data = await res.json();
-        if (ignore) return;
-        const templates: RecognitionTemplate[] = Array.isArray(data.templates)
-          ? data.templates
-          : [];
-        templatesRef.current = templates;
-        setTemplateCount(templates.length);
-      } catch (err) {
-        if (!ignore) {
-          console.error("Failed to load recognition templates:", err);
-          templatesRef.current = [];
-          setTemplateCount(0);
-        }
-      } finally {
-        if (!ignore) setTemplatesLoading(false);
-      }
-    }
-
-    run();
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
 
   // ── Recognition loop ───────────────────────────────────────────────────────
   useEffect(() => {
+    // Reset recognition state whenever dependencies (like templates) change
+    consecutiveHitRef.current = null;
+
     if (!isCameraActive || !isModelReady) {
       if (animationFrameIdRef.current) {
         cancelAnimationFrame(animationFrameIdRef.current);
@@ -172,7 +129,6 @@ export function useFaceRecognition(
         const ctx = canvas.getContext("2d");
         if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
-      consecutiveHitRef.current = null;
       return;
     }
 
@@ -184,7 +140,6 @@ export function useFaceRecognition(
       const video = videoRef.current;
       const canvas = canvasRef.current;
       const faceapi = faceapiRef.current;
-      const templates = templatesRef.current;
 
       // Target ~8 fps for recognition (every 125 ms)
       const now = performance.now();
@@ -454,7 +409,7 @@ export function useFaceRecognition(
         animationFrameIdRef.current = null;
       }
     };
-  }, [isCameraActive, isModelReady, videoRef]);
+  }, [isCameraActive, isModelReady, videoRef, templates]);
 
   const result: RecognitionResult = !isModelReady
     ? {
@@ -476,8 +431,6 @@ export function useFaceRecognition(
     isModelLoading,
     isModelReady,
     modelError,
-    templatesLoading,
-    templateCount,
     result,
   };
 }

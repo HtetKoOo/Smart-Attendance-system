@@ -65,14 +65,9 @@ export function useCamera(): UseCameraResult {
 
       streamRef.current = stream;
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play().catch((err) => {
-            console.error("Error playing video:", err);
-          });
-        };
-      }
+      streamRef.current = stream;
+      // We no longer attach srcObject here because the <video> element might not be mounted yet.
+      // This is handled by the new useEffect that watches `isActive`.
 
       setIsActive(true);
     } catch (err: unknown) {
@@ -126,6 +121,18 @@ export function useCamera(): UseCameraResult {
       }
     };
   }, []);
+
+  // Attach stream to video element after it mounts (triggered by isActive state change)
+  useEffect(() => {
+    if (isActive && videoRef.current && streamRef.current) {
+      if (videoRef.current.srcObject !== streamRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+        videoRef.current.play().catch((err) => {
+          console.error("Error playing video:", err);
+        });
+      }
+    }
+  }, [isActive]);
 
   return {
     videoRef,
