@@ -3,7 +3,7 @@ import { requireRole } from "@/lib/session";
 import { LecturerRosterContent } from "@/components/lecturer/lecturer-roster-content";
 
 export const metadata: Metadata = {
-  title: "My Course Students | Smart Attendance System",
+  title: "My Course Students | KBU Smart Attendance System",
   description: "View students enrolled in your assigned courses.",
 };
 

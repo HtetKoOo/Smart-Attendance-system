@@ -1,7 +1,6 @@
 import { getSession, getCurrentUser, getUserRole } from "@/lib/session";
 import { redirect } from "next/navigation";
-import { Sidebar } from "@/components/common/sidebar";
-import { DashboardHeader } from "@/components/common/dashboard-header";
+import { DashboardNavigation } from "@/components/common/dashboard-navigation";
 
 type DashboardLayoutProps = {
   children: React.ReactNode;
@@ -26,15 +25,9 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <Sidebar role={role || undefined} />
+      <DashboardNavigation user={user} role={role || undefined} />
 
       <div className="flex flex-1 flex-col lg:ml-64">
-        <DashboardHeader
-          title="Dashboard"
-          user={user}
-          role={role || undefined}
-        />
-
         <main className="flex-1">
           <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             {children}

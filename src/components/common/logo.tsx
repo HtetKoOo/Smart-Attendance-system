@@ -7,7 +7,7 @@ export function Logo() {
       <div className="rounded-lg bg-primary p-1.5">
         <GraduationCap className="size-5 text-primary-foreground" />
       </div>
-      <span className="hidden sm:inline">Smart Attendance</span>
+      <span className="hidden sm:inline">KBU Smart Attendance System</span>
     </Link>
   );
 }

@@ -38,7 +38,7 @@ export default async function Home() {
         <div className="text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-medium">
             <GraduationCap className="size-4" />
-            Smart Attendance System
+            KBU Smart Attendance System
           </div>
 
           <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
@@ -116,7 +116,7 @@ export default async function Home() {
       {/* Footer */}
       <footer className="border-t border-border/50 bg-background">
         <div className="mx-auto max-w-6xl px-4 py-8 text-center text-sm text-muted-foreground sm:px-6">
-          <p>Smart Attendance System © 2025. All rights reserved.</p>
+          <p>KBU Smart Attendance System © 2025. All rights reserved.</p>
         </div>
       </footer>
     </main>

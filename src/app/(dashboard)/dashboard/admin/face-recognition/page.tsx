@@ -2,7 +2,7 @@ import { requireRole } from "@/lib/session";
 import { FaceDetectionContent } from "@/components/face/face-detection-content";
 
 export const metadata = {
-  title: "Face Detection - Smart Attendance System",
+  title: "Face Detection - KBU Smart Attendance System",
 };
 
 export default async function FaceDetectionPage() {

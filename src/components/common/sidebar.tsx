@@ -29,9 +29,11 @@ interface NavItemConfig {
 
 interface SidebarProps {
   role?: Role;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
-export function Sidebar({ role }: SidebarProps) {
+export function Sidebar({ role, mobileOpen = false, onMobileClose }: SidebarProps) {
   const getNavItems = () => {
     const baseItems: NavItemConfig[] = [
       { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -185,22 +187,47 @@ export function Sidebar({ role }: SidebarProps) {
 
   const navItems = getNavItems();
 
-  return (
-    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 border-r border-sidebar-border bg-sidebar lg:flex lg:flex-col">
-      <div className="border-b border-sidebar-border p-4">
-        <Logo />
-      </div>
-      <nav className="flex-1 space-y-1 overflow-y-auto p-4">
-        {navItems.map((item) => (
+  const navigation = (showLabel = false, onNavigate?: () => void) => (
+    <nav className="flex-1 space-y-1 overflow-y-auto p-4">
+      {navItems.map((item) => (
+        <div key={item.href} onClick={onNavigate}>
           <NavItem
-            key={item.href}
             href={item.href}
             icon={item.icon}
             label={item.label}
             comingSoon={item.comingSoon}
+            showLabel={showLabel}
           />
-        ))}
-      </nav>
-    </aside>
+        </div>
+      ))}
+    </nav>
+  );
+
+  return (
+    <>
+      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 border-r border-sidebar-border bg-sidebar lg:flex lg:flex-col">
+        <div className="border-b border-sidebar-border p-4">
+          <Logo />
+        </div>
+        {navigation()}
+      </aside>
+
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            type="button"
+            aria-label="Close navigation menu"
+            className="absolute inset-0 h-full w-full bg-black/40"
+            onClick={onMobileClose}
+          />
+          <aside className="relative flex h-full w-72 flex-col border-r border-sidebar-border bg-sidebar shadow-xl">
+            <div className="border-b border-sidebar-border p-4">
+              <Logo />
+            </div>
+            {navigation(true, onMobileClose)}
+          </aside>
+        </div>
+      )}
+    </>
   );
 }

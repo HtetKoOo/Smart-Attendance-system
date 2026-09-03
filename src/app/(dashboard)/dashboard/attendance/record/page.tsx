@@ -3,7 +3,7 @@ import { requireRole } from "@/lib/session";
 import { AttendanceRecordContent } from "@/components/attendance/attendance-record-content";
 
 export const metadata: Metadata = {
-  title: "Record Attendance | Smart Attendance System",
+  title: "Record Attendance | KBU Smart Attendance System",
   description: "Record attendance using facial recognition.",
 };
 

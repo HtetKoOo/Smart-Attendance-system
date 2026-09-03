@@ -2,7 +2,7 @@ import { requireRole } from "@/lib/session";
 import { ClassroomManagementContent } from "@/components/admin/classroom-management";
 
 export const metadata = {
-  title: "Classroom Management - Smart Attendance System",
+  title: "Classroom Management - KBU Smart Attendance System",
 };
 
 export default async function ClassroomManagementPage() {

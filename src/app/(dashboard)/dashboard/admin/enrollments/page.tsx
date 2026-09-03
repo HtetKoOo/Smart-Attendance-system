@@ -3,7 +3,7 @@ import { requireRole } from "@/lib/session";
 import { EnrollmentManagementContent } from "@/components/admin/enrollment-management";
 
 export const metadata: Metadata = {
-  title: "Course Enrollments | Smart Attendance System",
+  title: "Course Enrollments | KBU Smart Attendance System",
   description: "Manage course enrollments for students.",
 };
 

@@ -24,6 +24,12 @@ interface LecturerFormData {
   [key: string]: string | undefined;
 }
 
+interface UnlinkedUser {
+  id: string;
+  name: string;
+  email: string;
+}
+
 function useLecturers(page: number, search: string) {
   const [lecturers, setLecturers] = useState<Lecturer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -85,6 +91,7 @@ export function LecturerManagementContent() {
   const [showForm, setShowForm] = useState(false);
   const [editingLecturer, setEditingLecturer] = useState<Lecturer | null>(null);
   const [deleteLecturer, setDeleteLecturer] = useState<Lecturer | null>(null);
+  const [unlinkedUsers, setUnlinkedUsers] = useState<UnlinkedUser[]>([]);
 
   const {
     lecturers,
@@ -95,9 +102,21 @@ export function LecturerManagementContent() {
     setError,
   } = useLecturers(page, search);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     setEditingLecturer(null);
+    setError("");
     setShowForm(true);
+
+    try {
+      const response = await fetch("/api/admin/unlinked-users");
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to fetch registered accounts");
+      }
+      setUnlinkedUsers(result.data);
+    } catch (err) {
+      setError((err as Error).message);
+    }
   };
 
   const handleEdit = (lecturer: Lecturer) => {
@@ -185,7 +204,7 @@ export function LecturerManagementContent() {
         </div>
         <Button onClick={handleAdd} size="sm">
           <Plus className="mr-2 size-4" />
-          Add Lecturer
+          Link Registered Lecturer
         </Button>
       </div>
 
@@ -252,12 +271,28 @@ export function LecturerManagementContent() {
 
       {showForm && (
         <FormDialog
-          title={editingLecturer ? "Edit Lecturer" : "Add Lecturer"}
-          fields={[
-            { name: "name", label: "Full Name", required: true },
-            { name: "email", label: "Email", type: "email", required: true },
-            { name: "lecturerId", label: "Lecturer ID", required: true },
-          ]}
+          title={editingLecturer ? "Edit Lecturer" : "Link Registered Lecturer"}
+          fields={
+            editingLecturer
+              ? [
+                  { name: "name", label: "Full Name", required: true },
+                  { name: "email", label: "Email", type: "email", required: true },
+                  { name: "lecturerId", label: "Lecturer ID", required: true },
+                ]
+              : [
+                  {
+                    name: "userId",
+                    label: "Registered Account",
+                    type: "select",
+                    required: true,
+                    options: unlinkedUsers.map((user) => ({
+                      value: user.id,
+                      label: `${user.name} (${user.email})`,
+                    })),
+                  },
+                  { name: "lecturerId", label: "Lecturer ID", required: true },
+                ]
+          }
           initialData={
             editingLecturer
               ? {
