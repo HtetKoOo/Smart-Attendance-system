@@ -323,48 +323,10 @@ export function AttendanceRecordContent() {
                   autoPlay
                   muted
                 />
-                <canvas
+                  <canvas
                   ref={canvasRef}
                   className="absolute top-0 left-0 w-full h-full pointer-events-none"
                 />
-                
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-md px-4">
-                  {(recordStatus && pausedRecognition) ? (
-                    <div className={`rounded-lg border px-4 py-3 text-sm font-medium text-center shadow-lg ${
-                      recordStatus.type === "success" ? "bg-emerald-500 border-emerald-600 text-white" :
-                      recordStatus.type === "error" ? "bg-red-500 border-red-600 text-white" :
-                      "bg-blue-500 border-blue-600 text-white"
-                    }`}>
-                      {recordStatus.message}
-                    </div>
-                  ) : (
-                    <div className="bg-background/95 backdrop-blur-sm border rounded-xl p-4 shadow-xl flex flex-col gap-3">
-                      <div className="text-center">
-                        <p className="font-semibold">
-                          {!isModelReady ? "Loading AI models..." : result.statusMessage}
-                        </p>
-                        {isMatch && (
-                          <p className="text-sm text-muted-foreground">
-                            {result.studentId} • Match Confidence: {result.confidenceLabel}
-                          </p>
-                        )}
-                      </div>
-                      
-                      <Button 
-                        size="lg" 
-                        className="w-full font-bold text-lg"
-                        disabled={!isMatch || recording || pausedRecognition}
-                        onClick={handleRecordAttendance}
-                      >
-                        {recording ? (
-                          <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Recording...</>
-                        ) : (
-                          <><UserCheck className="mr-2 h-5 w-5" /> Record Attendance</>
-                        )}
-                      </Button>
-                    </div>
-                  )}
-                </div>
               </>
             ) : (
               <div className="text-muted-foreground text-sm flex flex-col items-center gap-4">
@@ -377,7 +339,51 @@ export function AttendanceRecordContent() {
               </div>
             )}
           </div>
-          <div className="p-4 border-t border-border bg-card">
+          
+          {/* Moved recognition status and record button panel */}
+          {isCameraActive && (
+            <div className="p-5 border-t border-border bg-card">
+              <div className="max-w-md mx-auto">
+                {(recordStatus && pausedRecognition) ? (
+                  <div className={`rounded-lg border px-4 py-3 text-sm font-medium text-center shadow-sm ${
+                    recordStatus.type === "success" ? "bg-emerald-500 border-emerald-600 text-white" :
+                    recordStatus.type === "error" ? "bg-red-500 border-red-600 text-white" :
+                    "bg-blue-500 border-blue-600 text-white"
+                  }`}>
+                    {recordStatus.message}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    <div className="text-center bg-muted/30 p-3 rounded-lg border">
+                      <p className="font-semibold">
+                        {!isModelReady ? "Loading AI models..." : result.statusMessage}
+                      </p>
+                      {isMatch && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {result.studentId} • Match Confidence: {result.confidenceLabel}
+                        </p>
+                      )}
+                    </div>
+                    
+                    <Button 
+                      size="lg" 
+                      className="w-full font-bold text-lg"
+                      disabled={!isMatch || recording || pausedRecognition}
+                      onClick={handleRecordAttendance}
+                    >
+                      {recording ? (
+                        <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Recording...</>
+                      ) : (
+                        <><UserCheck className="mr-2 h-5 w-5" /> Record Attendance</>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="p-4 border-t border-border bg-muted/30">
             <p className="text-xs text-muted-foreground text-center">
               Live camera frames and descriptors stay local. Enrolled templates are loaded securely for local matching. No raw camera data is stored.
             </p>

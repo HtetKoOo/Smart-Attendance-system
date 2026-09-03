@@ -15,6 +15,7 @@ import {
   UserCheck,
   Eye,
   ClipboardCheck,
+  GraduationCap,
 } from "lucide-react";
 import type { Role } from "@prisma/client";
 import type { LucideIcon } from "lucide-react";
@@ -80,6 +81,11 @@ export function Sidebar({ role }: SidebarProps) {
           label: "Record Attendance",
         },
         {
+          href: "/dashboard/admin/enrollments",
+          icon: GraduationCap,
+          label: "Course Enrollments",
+        },
+        {
           href: "/dashboard/admin/face-recognition",
           icon: ScanFace,
           label: "Face Detection",
@@ -102,6 +108,11 @@ export function Sidebar({ role }: SidebarProps) {
     if (role === "LECTURER") {
       return [
         ...baseItems,
+        {
+          href: "/dashboard/lecturer/enrollments",
+          icon: GraduationCap,
+          label: "My Course Students",
+        },
         {
           href: "/dashboard/attendance/record",
           icon: ClipboardCheck,
