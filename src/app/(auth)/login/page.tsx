@@ -4,7 +4,7 @@ import { LoginForm } from "@/components/forms/login-form";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Login - Smart Attendance System",
+  title: "Login - KBU Smart Attendance System",
 };
 
 export default async function LoginPage() {
@@ -20,7 +20,7 @@ export default async function LoginPage() {
       <div className="space-y-2 text-center">
         <h1 className="text-2xl font-bold">Welcome Back</h1>
         <p className="text-sm text-muted-foreground">
-          Sign in to your Smart Attendance account
+          Sign in to your KBU Smart Attendance account
         </p>
       </div>
 

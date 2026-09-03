@@ -11,6 +11,7 @@ interface NavItemProps {
   label: string;
   disabled?: boolean;
   comingSoon?: boolean;
+  showLabel?: boolean;
 }
 
 export function NavItem({
@@ -19,6 +20,7 @@ export function NavItem({
   label,
   disabled = false,
   comingSoon = false,
+  showLabel = false,
 }: NavItemProps) {
   const pathname = usePathname();
   const isActive = pathname === href || pathname.startsWith(`${href}/`);
@@ -37,9 +39,9 @@ export function NavItem({
       title={comingSoon ? "Coming soon" : undefined}
     >
       <Icon className="size-4" />
-      <span className="hidden md:inline">{label}</span>
+      <span className={showLabel ? "inline" : "hidden md:inline"}>{label}</span>
       {comingSoon && (
-        <span className="ml-auto hidden text-xs text-muted-foreground md:inline">
+        <span className={showLabel ? "ml-auto text-xs text-muted-foreground" : "ml-auto hidden text-xs text-muted-foreground md:inline"}>
           Soon
         </span>
       )}
