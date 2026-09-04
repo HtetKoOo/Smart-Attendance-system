@@ -21,6 +21,7 @@ export interface UseFaceEnrollmentResult {
   isCapturing: boolean;
   captureStep: number;
   totalSteps: number;
+  captureInstruction: string;
   enrollmentError: string | null;
   enrollmentSuccess: boolean;
   captureEnrollment: (studentId: string) => Promise<boolean>;
@@ -51,9 +52,15 @@ export function useFaceEnrollment(
 
   const [isCapturing, setIsCapturing] = useState(false);
   const [captureStep, setCaptureStep] = useState(0);
-  const totalSteps = 4;
+  const totalSteps = 10;
   const [enrollmentError, setEnrollmentError] = useState<string | null>(null);
   const [enrollmentSuccess, setEnrollmentSuccess] = useState(false);
+
+  const getCaptureInstruction = (step: number) => {
+    if (step <= 4) return "Look straight ahead and keep still.";
+    if (step <= 7) return "Turn your face slightly to your left.";
+    return "Turn your face slightly to your right.";
+  };
 
   // Initialize face-api models from local /models/face-api/
   useEffect(() => {
@@ -371,20 +378,20 @@ export function useFaceEnrollment(
 
           capturedDescriptors.push(detection.descriptor);
 
-          // Wait 200ms between sample captures
+          // A short gap captures natural micro-variations without retaining frames.
           if (i < totalSteps - 1) {
-            await new Promise((res) => setTimeout(res, 200));
+            await new Promise((res) => setTimeout(res, 250));
           }
         }
 
-        // Validate consistency between captured descriptors (Euclidean distance < 0.45)
+        // Reject a capture set that is too inconsistent to safely represent one person.
         for (let i = 0; i < capturedDescriptors.length; i++) {
           for (let j = i + 1; j < capturedDescriptors.length; j++) {
             const distance = faceapi.euclideanDistance(
               capturedDescriptors[i],
               capturedDescriptors[j],
             );
-            if (distance > 0.45) {
+            if (distance > 0.52) {
               throw new Error(
                 "Face samples were inconsistent. Please remain still during the capture sequence.",
               );
@@ -392,37 +399,33 @@ export function useFaceEnrollment(
           }
         }
 
-        // Compute average normalized 128D embedding vector
-        const averaged = new Float32Array(128);
-        for (let dim = 0; dim < 128; dim++) {
-          let sum = 0;
-          for (let s = 0; s < capturedDescriptors.length; s++) {
-            sum += capturedDescriptors[s][dim];
+        // Build three normalized templates: frontal, slightly left, and slightly right.
+        // Only these numeric vectors are sent; raw samples and camera frames stay local.
+        const templateGroups = [
+          capturedDescriptors.slice(0, 4),
+          capturedDescriptors.slice(4, 7),
+          capturedDescriptors.slice(7, 10),
+        ];
+        const embeddings = templateGroups.map((group) => {
+          const averaged = new Float32Array(128);
+          for (let dimension = 0; dimension < 128; dimension += 1) {
+            averaged[dimension] =
+              group.reduce((sum, descriptor) => sum + descriptor[dimension], 0) /
+              group.length;
           }
-          averaged[dim] = sum / capturedDescriptors.length;
-        }
+          const norm = Math.sqrt(
+            averaged.reduce((sum, value) => sum + value * value, 0),
+          );
+          return Array.from(averaged, (value) => (norm > 0 ? value / norm : value));
+        });
 
-        // Normalize the averaged vector
-        let norm = 0;
-        for (let dim = 0; dim < 128; dim++) {
-          norm += averaged[dim] * averaged[dim];
-        }
-        norm = Math.sqrt(norm);
-        if (norm > 0) {
-          for (let dim = 0; dim < 128; dim++) {
-            averaged[dim] = averaged[dim] / norm;
-          }
-        }
-
-        const embeddingArray = Array.from(averaged);
-
-        // Submit numeric embedding vector to ADMIN API route
+        // Submit verified numeric vectors to the ADMIN-only API route.
         const response = await fetch("/api/admin/face-enrollment", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             studentId,
-            embedding: embeddingArray,
+            embeddings,
           }),
         });
 
@@ -478,6 +481,7 @@ export function useFaceEnrollment(
     isCapturing,
     captureStep,
     totalSteps,
+    captureInstruction: getCaptureInstruction(captureStep || 1),
     enrollmentError,
     enrollmentSuccess,
     captureEnrollment,

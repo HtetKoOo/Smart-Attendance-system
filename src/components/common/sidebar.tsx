@@ -16,6 +16,7 @@ import {
   Eye,
   ClipboardCheck,
   GraduationCap,
+  SlidersHorizontal,
 } from "lucide-react";
 import type { Role } from "@prisma/client";
 import type { LucideIcon } from "lucide-react";
@@ -76,6 +77,11 @@ export function Sidebar({ role, mobileOpen = false, onMobileClose }: SidebarProp
           href: "/dashboard/admin/face-recognition-test",
           icon: Eye,
           label: "Face Recognition Test",
+        },
+        {
+          href: "/dashboard/admin/face-calibration",
+          icon: SlidersHorizontal,
+          label: "Recognition Calibration",
         },
         {
           href: "/dashboard/attendance/record",

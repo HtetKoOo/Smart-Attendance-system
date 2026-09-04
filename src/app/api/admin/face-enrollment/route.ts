@@ -10,16 +10,18 @@ export async function GET(request: NextRequest) {
     const studentId = searchParams.get("studentId");
 
     if (studentId) {
-      const enrollment = await prisma.faceEmbedding.findFirst({
+      const enrollments = await prisma.faceEmbedding.findMany({
         where: { studentId },
         orderBy: { updatedAt: "desc" },
         select: { id: true, studentId: true, createdAt: true, updatedAt: true },
       });
+      const latestEnrollment = enrollments[0];
 
       return NextResponse.json({
-        isEnrolled: !!enrollment,
-        enrolledAt: enrollment?.updatedAt || null,
-        embeddingId: enrollment?.id || null,
+        isEnrolled: enrollments.length > 0,
+        enrolledAt: latestEnrollment?.updatedAt || null,
+        embeddingId: latestEnrollment?.id || null,
+        templateCount: enrollments.length,
       });
     }
 
@@ -29,8 +31,15 @@ export async function GET(request: NextRequest) {
       distinct: ["studentId"],
     });
 
-    const enrolledStudentIds = enrollments.map((e) => e.studentId);
-    return NextResponse.json({ enrolledStudentIds });
+    const templateCounts = enrollments.reduce<Record<string, number>>(
+      (counts, enrollment) => {
+        counts[enrollment.studentId] = (counts[enrollment.studentId] || 0) + 1;
+        return counts;
+      },
+      {},
+    );
+    const enrolledStudentIds = Object.keys(templateCounts);
+    return NextResponse.json({ enrolledStudentIds, templateCounts });
   } catch (error) {
     if (error instanceof Error && error.message.includes("Unauthorized")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -76,7 +85,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Reject unexpected fields – only studentId and embedding are accepted
-    const allowedKeys = new Set(["studentId", "embedding"]);
+    const allowedKeys = new Set(["studentId", "embedding", "embeddings"]);
     const unexpectedKeys = Object.keys(body).filter((k) => !allowedKeys.has(k));
     if (unexpectedKeys.length > 0) {
       return NextResponse.json(
@@ -85,7 +94,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { studentId, embedding } = body;
+    const { studentId, embedding, embeddings } = body;
 
     // Validate studentId
     if (!studentId || typeof studentId !== "string") {
@@ -108,50 +117,73 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate biometric embedding format (must be an array of 128 finite numbers)
-    if (!Array.isArray(embedding) || embedding.length !== 128) {
+    if (embedding !== undefined && embeddings !== undefined) {
+      return NextResponse.json(
+        { error: "Send either embedding or embeddings, not both." },
+        { status: 400 },
+      );
+    }
+
+    // Backward compatible with existing single-template enrollment requests.
+    const templatesToStore = embeddings !== undefined ? embeddings : [embedding];
+    if (
+      !Array.isArray(templatesToStore) ||
+      templatesToStore.length < 1 ||
+      templatesToStore.length > 3
+    ) {
       return NextResponse.json(
         {
-          error:
-            "Invalid embedding format. Expected a 128-dimensional numeric array.",
+          error: "Provide between 1 and 3 biometric templates.",
         },
         { status: 400 },
       );
     }
 
-    const isValidNumbers = embedding.every(
-      (val) =>
-        typeof val === "number" && Number.isFinite(val) && !Number.isNaN(val),
+    const isValidTemplates = templatesToStore.every(
+      (template) =>
+        Array.isArray(template) &&
+        template.length === 128 &&
+        template.every(
+          (value) =>
+            typeof value === "number" &&
+            Number.isFinite(value) &&
+            !Number.isNaN(value),
+        ),
     );
 
-    if (!isValidNumbers) {
+    if (!isValidTemplates) {
       return NextResponse.json(
-        { error: "Embedding contains invalid or non-finite numbers." },
+        {
+          error:
+            "Every template must contain exactly 128 finite numeric values.",
+        },
         { status: 400 },
       );
     }
 
-    // Atomic replace / upsert: delete existing embeddings for this student and save new template
-    const record = await prisma.$transaction(async (tx) => {
+    const verifiedTemplates = templatesToStore as number[][];
+
+    // Atomically replace every prior template with the newly verified templates.
+    const templateCount = await prisma.$transaction(async (tx) => {
       await tx.faceEmbedding.deleteMany({
         where: { studentId },
       });
 
-      return tx.faceEmbedding.create({
-        data: {
+      const result = await tx.faceEmbedding.createMany({
+        data: verifiedTemplates.map((template) => ({
           studentId,
-          embedding,
-        },
+          embedding: template,
+        })),
       });
+      return result.count;
     });
 
     return NextResponse.json({
       success: true,
-      message: `Face template successfully enrolled for ${student.user.name}`,
+      message: `${templateCount} face templates successfully enrolled for ${student.user.name}`,
       data: {
-        id: record.id,
-        studentId: record.studentId,
-        updatedAt: record.updatedAt,
+        studentId,
+        templateCount,
       },
     });
   } catch (error) {
