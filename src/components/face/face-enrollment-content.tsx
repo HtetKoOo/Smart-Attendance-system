@@ -21,6 +21,7 @@ import {
 
 function useEnrolledStudents() {
   const [enrolledStudentIds, setEnrolledStudentIds] = useState<string[]>([]);
+  const [templateCounts, setTemplateCounts] = useState<Record<string, number>>({});
   const [refreshKey, setRefreshKey] = useState(0);
 
   const refetch = useCallback(() => {
@@ -37,6 +38,11 @@ function useEnrolledStudents() {
         if (ignore) return;
         if (res.ok && Array.isArray(data.enrolledStudentIds)) {
           setEnrolledStudentIds(data.enrolledStudentIds);
+          setTemplateCounts(
+            data.templateCounts && typeof data.templateCounts === "object"
+              ? data.templateCounts
+              : {},
+          );
         }
       } catch (err) {
         if (!ignore) {
@@ -52,7 +58,7 @@ function useEnrolledStudents() {
     };
   }, [refreshKey]);
 
-  return { enrolledStudentIds, refetchEnrolled: refetch };
+  return { enrolledStudentIds, templateCounts, refetchEnrolled: refetch };
 }
 
 export function FaceEnrollmentContent() {
@@ -60,7 +66,7 @@ export function FaceEnrollmentContent() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const { enrolledStudentIds, refetchEnrolled } = useEnrolledStudents();
+  const { enrolledStudentIds, templateCounts, refetchEnrolled } = useEnrolledStudents();
 
   const {
     videoRef,
@@ -80,6 +86,7 @@ export function FaceEnrollmentContent() {
     isCapturing,
     captureStep,
     totalSteps,
+    captureInstruction,
     enrollmentError,
     enrollmentSuccess,
     captureEnrollment,
@@ -159,6 +166,7 @@ export function FaceEnrollmentContent() {
         selectedStudent={selectedStudent}
         onSelectStudent={handleStudentSelect}
         enrolledStudentIds={enrolledStudentIds}
+        templateCounts={templateCounts}
         disabled={isCapturing}
       />
 
@@ -243,7 +251,7 @@ export function FaceEnrollmentContent() {
               <Loader2 className="size-10 animate-spin text-primary mb-3" />
               <p className="font-bold text-base">Capturing Biometric Samples...</p>
               <p className="text-xs text-neutral-300 mt-1">
-                Sample {captureStep} of {totalSteps} — Please hold still.
+                Sample {captureStep} of {totalSteps} — {captureInstruction}
               </p>
               <div className="w-48 bg-neutral-800 rounded-full h-2 mt-4 overflow-hidden border border-neutral-700">
                 <div
@@ -376,7 +384,7 @@ export function FaceEnrollmentContent() {
           <div>
             <p className="font-semibold">Enrollment Completed Successfully</p>
             <p className="text-xs mt-0.5">
-              128-dimensional biometric face template for <strong>{selectedStudent.user.name}</strong> ({selectedStudent.studentId}) is securely stored.
+              Three 128-dimensional biometric templates for <strong>{selectedStudent.user.name}</strong> ({selectedStudent.studentId}) are securely stored. Raw camera images were not saved.
             </p>
           </div>
         </div>

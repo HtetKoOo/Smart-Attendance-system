@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 
 function RecognitionResultCard({ result }: { result: RecognitionResult }) {
-  const { state, studentId, studentName, distance, confidenceLabel } = result;
+  const { state, studentId, studentName, distance, confidenceLabel, isAmbiguous, secondBestDistance } = result;
 
   if (state === "idle") {
     return (
@@ -95,9 +95,11 @@ function RecognitionResultCard({ result }: { result: RecognitionResult }) {
             <UserX className="size-5 text-muted-foreground" />
           </div>
           <div>
-            <p className="font-semibold text-sm">No Match Found</p>
+            <p className="font-semibold text-sm">{isAmbiguous ? "Ambiguous Match" : "No Match Found"}</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              No enrolled student matched this face.
+              {isAmbiguous
+                ? "The two closest students are too similar. Recognition is paused for safety."
+                : "No enrolled student matched this face."}
             </p>
             {distance !== undefined && (
               <p className="text-xs text-muted-foreground mt-2">
@@ -106,6 +108,11 @@ function RecognitionResultCard({ result }: { result: RecognitionResult }) {
                   {distance.toFixed(4)}
                 </span>{" "}
                 <span className="opacity-60">(threshold: {RECOGNITION_THRESHOLD})</span>
+              </p>
+            )}
+            {secondBestDistance !== undefined && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Second-best distance: <span className="font-mono font-medium text-foreground">{secondBestDistance.toFixed(4)}</span>
               </p>
             )}
           </div>
@@ -244,7 +251,7 @@ export function FaceRecognitionTestContent() {
             <span className={`text-sm font-bold ${templateCount > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>
               {templatesLoading ? "..." : templateCount}
             </span>
-            <span className="text-xs text-muted-foreground">students</span>
+            <span className="text-xs text-muted-foreground">templates</span>
           </div>
         </div>
 
@@ -376,6 +383,9 @@ export function FaceRecognitionTestContent() {
           It must be calibrated with real-world consented test data before use in production attendance systems.
           A lower threshold reduces false positives but may miss genuine matches; a higher threshold does the opposite.
         </p>
+        <a href="/dashboard/admin/face-calibration" className="inline-block font-medium text-primary underline">
+          Open the controlled calibration screen
+        </a>
       </div>
     </div>
   );

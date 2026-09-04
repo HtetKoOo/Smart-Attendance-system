@@ -2,13 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import type * as FaceApiTypes from "@vladmandic/face-api";
+import {
+  AMBIGUITY_MARGIN,
+  DEFAULT_RECOGNITION_THRESHOLD,
+  evaluateFaceMatch,
+} from "@/lib/face-matching";
 
 /**
  * RECOGNITION_THRESHOLD: Euclidean distance below which a face is considered
  * a match. Lower = stricter. This value requires real-world calibration with
  * consented test data before production use. 0.48 is a conservative default.
  */
-export const RECOGNITION_THRESHOLD = 0.48;
+export const RECOGNITION_THRESHOLD = DEFAULT_RECOGNITION_THRESHOLD;
 
 export interface RecognitionTemplate {
   embeddingId: string;
@@ -32,6 +37,8 @@ export interface RecognitionResult {
   studentName?: string;
   distance?: number;
   confidenceLabel?: string;
+  secondBestDistance?: number;
+  isAmbiguous?: boolean;
   /** True after the same student has passed the consecutive-frame check. */
   isStable?: boolean;
   /** True when a recent stable match is being held during a brief camera jitter. */
@@ -348,22 +355,14 @@ export function useAttendanceRecognition(
               // Quality gate passed — run Euclidean matching
               const descriptor = detection.descriptor;
 
-              let bestDist = Infinity;
-              let bestTemplate: RecognitionTemplate | null = null;
-
-              for (const tmpl of templates) {
-                const dist = faceapi.euclideanDistance(
-                  descriptor,
-                  tmpl.embedding as unknown as Float32Array,
-                );
-                if (dist < bestDist) {
-                  bestDist = dist;
-                  bestTemplate = tmpl;
-                }
-              }
+              const evaluation = evaluateFaceMatch(descriptor, templates);
+              const bestTemplate = evaluation.best;
+              const bestDist = bestTemplate?.distance ?? Infinity;
+              const secondBestDistance = evaluation.runnerUp?.distance;
 
               // Smoothing: require SMOOTH_FRAMES consecutive consistent results
-              const isMatch = bestDist <= RECOGNITION_THRESHOLD && bestTemplate;
+              const isMatch =
+                evaluation.isWithinThreshold && !evaluation.isAmbiguous && bestTemplate;
 
               if (isMatch && bestTemplate) {
                 const prev = consecutiveHitRef.current;
@@ -412,7 +411,9 @@ export function useAttendanceRecognition(
                 const label =
                   smoothedMatch && bestTemplate
                     ? `${bestTemplate.studentName}`
-                    : bestDist <= RECOGNITION_THRESHOLD
+                    : evaluation.isAmbiguous
+                      ? "Ambiguous"
+                      : bestDist <= RECOGNITION_THRESHOLD
                       ? "Verifying..."
                       : "No Match";
                 ctx.font = "bold 12px sans-serif";
@@ -446,6 +447,8 @@ export function useAttendanceRecognition(
                   studentName: bestTemplate.studentName,
                   distance: bestDist,
                   confidenceLabel: getConfidenceLabel(bestDist),
+                  secondBestDistance,
+                  isAmbiguous: false,
                   isStable: true,
                   isLocked: false,
                   statusMessage: `Stable match: ${bestTemplate.studentName}. Ready to record.`,
@@ -459,6 +462,8 @@ export function useAttendanceRecognition(
                   studentName: bestTemplate.studentName,
                   distance: bestDist,
                   confidenceLabel: getConfidenceLabel(bestDist),
+                  secondBestDistance,
+                  isAmbiguous: false,
                   statusMessage: "Verifying stable match...",
                 });
               } else {
@@ -468,7 +473,11 @@ export function useAttendanceRecognition(
                   state: "no_match",
                   faceCount: 1,
                   distance: bestDist,
-                  statusMessage: "No enrolled student matched.",
+                  secondBestDistance,
+                  isAmbiguous: evaluation.isAmbiguous,
+                  statusMessage: evaluation.isAmbiguous
+                    ? `Ambiguous match. Move closer and try again (top two matches are within ${AMBIGUITY_MARGIN.toFixed(3)}).`
+                    : "No enrolled student matched.",
                 });
               }
             }

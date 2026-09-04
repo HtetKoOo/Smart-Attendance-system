@@ -16,6 +16,7 @@ interface StudentSelectorProps {
   selectedStudent: StudentItem | null;
   onSelectStudent: (student: StudentItem | null) => void;
   enrolledStudentIds: string[];
+  templateCounts?: Record<string, number>;
   disabled?: boolean;
 }
 
@@ -23,6 +24,7 @@ export function StudentSelector({
   selectedStudent,
   onSelectStudent,
   enrolledStudentIds,
+  templateCounts = {},
   disabled = false,
 }: StudentSelectorProps) {
   const [students, setStudents] = useState<StudentItem[]>([]);
@@ -140,7 +142,7 @@ export function StudentSelector({
                       {isEnrolled ? (
                         <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
                           <CheckCircle2 className="size-3" />
-                          Enrolled
+                          {templateCounts[st.id] || 1} template{(templateCounts[st.id] || 1) === 1 ? "" : "s"}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full border border-border">
@@ -169,7 +171,7 @@ export function StudentSelector({
                 </p>
                 {enrolledStudentIds.includes(selectedStudent.id) ? (
                   <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                    Enrolled
+                    {templateCounts[selectedStudent.id] || 1} template{(templateCounts[selectedStudent.id] || 1) === 1 ? "" : "s"}
                   </span>
                 ) : (
                   <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">

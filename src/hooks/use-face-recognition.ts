@@ -2,13 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import type * as FaceApiTypes from "@vladmandic/face-api";
+import {
+  AMBIGUITY_MARGIN,
+  DEFAULT_RECOGNITION_THRESHOLD,
+  evaluateFaceMatch,
+} from "@/lib/face-matching";
 
 /**
  * RECOGNITION_THRESHOLD: Euclidean distance below which a face is considered
  * a match. Lower = stricter. This value requires real-world calibration with
  * consented test data before production use. 0.48 is a conservative default.
  */
-export const RECOGNITION_THRESHOLD = 0.48;
+export const RECOGNITION_THRESHOLD = DEFAULT_RECOGNITION_THRESHOLD;
 
 export interface RecognitionTemplate {
   embeddingId: string;
@@ -32,6 +37,8 @@ export interface RecognitionResult {
   studentName?: string;
   distance?: number;
   confidenceLabel?: string;
+  secondBestDistance?: number;
+  isAmbiguous?: boolean;
   faceCount: number;
   statusMessage: string;
 }
@@ -56,6 +63,7 @@ function getConfidenceLabel(distance: number): string {
 export function useFaceRecognition(
   videoRef: React.RefObject<HTMLVideoElement | null>,
   isCameraActive: boolean,
+  threshold = RECOGNITION_THRESHOLD,
 ): UseFaceRecognitionResult {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const faceapiRef = useRef<typeof FaceApiTypes | null>(null);
@@ -272,7 +280,8 @@ export function useFaceRecognition(
             // Per-frame quality gates (same criteria as enrollment)
             const MIN_CONFIDENCE = 0.65;
             const MAX_CENTER_OFFSET = 0.18; // 18% of video dimensions
-            const MIN_FACE_HEIGHT_RATIO = 0.25;
+            // Recognition can accept a slightly more distant, but still usable, face.
+            const MIN_FACE_HEIGHT_RATIO = 0.18;
             const MAX_FACE_HEIGHT_RATIO = 0.75;
 
             const faceCenterX = box.x + box.width / 2;
@@ -335,22 +344,14 @@ export function useFaceRecognition(
               // Quality gate passed — run Euclidean matching
               const descriptor = detection.descriptor;
 
-              let bestDist = Infinity;
-              let bestTemplate: RecognitionTemplate | null = null;
-
-              for (const tmpl of templates) {
-                const dist = faceapi.euclideanDistance(
-                  descriptor,
-                  tmpl.embedding as unknown as Float32Array,
-                );
-                if (dist < bestDist) {
-                  bestDist = dist;
-                  bestTemplate = tmpl;
-                }
-              }
+              const evaluation = evaluateFaceMatch(descriptor, templates, threshold);
+              const bestTemplate = evaluation.best;
+              const bestDist = bestTemplate?.distance ?? Infinity;
+              const secondBestDistance = evaluation.runnerUp?.distance;
 
               // Smoothing: require SMOOTH_FRAMES consecutive consistent results
-              const isMatch = bestDist <= RECOGNITION_THRESHOLD && bestTemplate;
+              const isMatch =
+                evaluation.isWithinThreshold && !evaluation.isAmbiguous && bestTemplate;
 
               if (isMatch && bestTemplate) {
                 const prev = consecutiveHitRef.current;
@@ -399,7 +400,9 @@ export function useFaceRecognition(
                 const label =
                   smoothedMatch && bestTemplate
                     ? `${bestTemplate.studentName}`
-                    : bestDist <= RECOGNITION_THRESHOLD
+                    : evaluation.isAmbiguous
+                      ? "Ambiguous"
+                      : bestDist <= threshold
                       ? "Verifying..."
                       : "No Match";
                 ctx.font = "bold 12px sans-serif";
@@ -425,14 +428,36 @@ export function useFaceRecognition(
                   studentName: bestTemplate.studentName,
                   distance: bestDist,
                   confidenceLabel: getConfidenceLabel(bestDist),
+                  secondBestDistance,
+                  isAmbiguous: false,
                   statusMessage: `Recognized: ${bestTemplate.studentName}`,
+                });
+              } else if (isMatch && bestTemplate) {
+                setActiveResult({
+                  state: "recognizing",
+                  faceCount: 1,
+                  studentDbId: bestTemplate.studentDbId,
+                  studentId: bestTemplate.studentId,
+                  studentName: bestTemplate.studentName,
+                  distance: bestDist,
+                  confidenceLabel: getConfidenceLabel(bestDist),
+                  secondBestDistance,
+                  isAmbiguous: false,
+                  statusMessage: "Verifying stable match...",
                 });
               } else {
                 setActiveResult({
                   state: "no_match",
                   faceCount: 1,
+                  studentDbId: bestTemplate?.studentDbId,
+                  studentId: bestTemplate?.studentId,
+                  studentName: bestTemplate?.studentName,
                   distance: bestDist,
-                  statusMessage: "No enrolled student matched.",
+                  secondBestDistance,
+                  isAmbiguous: evaluation.isAmbiguous,
+                  statusMessage: evaluation.isAmbiguous
+                    ? `Ambiguous match. Move closer and try again (top two matches are within ${AMBIGUITY_MARGIN.toFixed(3)}).`
+                    : "No enrolled student matched.",
                 });
               }
             }
@@ -454,7 +479,7 @@ export function useFaceRecognition(
         animationFrameIdRef.current = null;
       }
     };
-  }, [isCameraActive, isModelReady, videoRef]);
+  }, [isCameraActive, isModelReady, threshold, videoRef]);
 
   const result: RecognitionResult = !isModelReady
     ? {
