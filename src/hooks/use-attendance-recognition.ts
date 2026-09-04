@@ -32,6 +32,10 @@ export interface RecognitionResult {
   studentName?: string;
   distance?: number;
   confidenceLabel?: string;
+  /** True after the same student has passed the consecutive-frame check. */
+  isStable?: boolean;
+  /** True when a recent stable match is being held during a brief camera jitter. */
+  isLocked?: boolean;
   faceCount: number;
   statusMessage: string;
 }
@@ -51,6 +55,21 @@ function getConfidenceLabel(distance: number): string {
   return "Low";
 }
 
+type StableMatch = Required<
+  Pick<
+    RecognitionResult,
+    "studentDbId" | "studentId" | "studentName" | "distance" | "confidenceLabel"
+  >
+> & {
+  expiresAt: number;
+};
+
+// Keeps a verified result visible through a very short dropped-frame or
+// quality-jitter period. It is deliberately cleared for unknown/multiple faces.
+const STABLE_MATCH_LOCK_MS = 1_500;
+const SMOOTH_FRAMES = 4;
+const MIN_FACE_HEIGHT_RATIO = 0.18;
+
 export function useAttendanceRecognition(
   videoRef: React.RefObject<HTMLVideoElement | null>,
   isCameraActive: boolean,
@@ -63,7 +82,7 @@ export function useAttendanceRecognition(
 
   // Smoothing: track consecutive frames identifying the same student
   const consecutiveHitRef = useRef<{ studentId: string; count: number } | null>(null);
-  const SMOOTH_FRAMES = 3; // require N consecutive frames for the same result
+  const stableMatchRef = useRef<StableMatch | null>(null);
 
   const [isModelLoading, setIsModelLoading] = useState(true);
   const [isModelReady, setIsModelReady] = useState(false);
@@ -118,6 +137,7 @@ export function useAttendanceRecognition(
   useEffect(() => {
     // Reset recognition state whenever dependencies (like templates) change
     consecutiveHitRef.current = null;
+    stableMatchRef.current = null;
 
     if (!isCameraActive || !isModelReady) {
       if (animationFrameIdRef.current) {
@@ -166,6 +186,7 @@ export function useAttendanceRecognition(
         // No enrolled templates at all
         if (templates.length === 0) {
           consecutiveHitRef.current = null;
+          stableMatchRef.current = null;
           setActiveResult({
             state: "no_templates",
             faceCount: 0,
@@ -189,13 +210,32 @@ export function useAttendanceRecognition(
 
           if (count === 0) {
             consecutiveHitRef.current = null;
-            setActiveResult({
-              state: "no_face",
-              faceCount: 0,
-              statusMessage: "No face detected. Look directly at the camera.",
-            });
+            const stableMatch = stableMatchRef.current;
+            if (stableMatch && stableMatch.expiresAt > now) {
+              setActiveResult({
+                state: "recognized",
+                faceCount: 0,
+                studentDbId: stableMatch.studentDbId,
+                studentId: stableMatch.studentId,
+                studentName: stableMatch.studentName,
+                distance: stableMatch.distance,
+                confidenceLabel: stableMatch.confidenceLabel,
+                isStable: true,
+                isLocked: true,
+                statusMessage: `Stable match held briefly: ${stableMatch.studentName}. Keep your face in view.`,
+              });
+            } else {
+              stableMatchRef.current = null;
+              setActiveResult({
+                state: "no_face",
+                faceCount: 0,
+                statusMessage: "No face detected. Look directly at the camera.",
+              });
+            }
           } else if (count > 1) {
             consecutiveHitRef.current = null;
+            // Multiple people must always override a prior match immediately.
+            stableMatchRef.current = null;
             setActiveResult({
               state: "multiple_faces",
               faceCount: count,
@@ -227,7 +267,6 @@ export function useAttendanceRecognition(
             // Per-frame quality gates (same criteria as enrollment)
             const MIN_CONFIDENCE = 0.65;
             const MAX_CENTER_OFFSET = 0.18; // 18% of video dimensions
-            const MIN_FACE_HEIGHT_RATIO = 0.25;
             const MAX_FACE_HEIGHT_RATIO = 0.75;
 
             const faceCenterX = box.x + box.width / 2;
@@ -249,7 +288,9 @@ export function useAttendanceRecognition(
             }
 
             if (adjustHint !== null) {
-              // Quality gate failed — clear smoothing, skip matching
+              // Quality gate failed — clear in-progress smoothing, skip matching.
+              // A very recent verified match may stay visible for the short lock
+              // period to avoid status flicker caused by a dropped camera frame.
               consecutiveHitRef.current = null;
 
               // Draw an amber box to give visual feedback
@@ -281,11 +322,28 @@ export function useAttendanceRecognition(
                 ctx.fillText(adjustHint, tagX + 7, tagY + 14);
               }
 
-              setActiveResult({
-                state: "no_face",
-                faceCount: 1,
-                statusMessage: adjustHint,
-              });
+              const stableMatch = stableMatchRef.current;
+              if (stableMatch && stableMatch.expiresAt > now) {
+                setActiveResult({
+                  state: "recognized",
+                  faceCount: 1,
+                  studentDbId: stableMatch.studentDbId,
+                  studentId: stableMatch.studentId,
+                  studentName: stableMatch.studentName,
+                  distance: stableMatch.distance,
+                  confidenceLabel: stableMatch.confidenceLabel,
+                  isStable: true,
+                  isLocked: true,
+                  statusMessage: `Stable match held briefly: ${stableMatch.studentName}. ${adjustHint}`,
+                });
+              } else {
+                stableMatchRef.current = null;
+                setActiveResult({
+                  state: "no_face",
+                  faceCount: 1,
+                  statusMessage: adjustHint,
+                });
+              }
             } else {
               // Quality gate passed — run Euclidean matching
               const descriptor = detection.descriptor;
@@ -372,6 +430,14 @@ export function useAttendanceRecognition(
               }
 
               if (smoothedMatch && bestTemplate) {
+                stableMatchRef.current = {
+                  studentDbId: bestTemplate.studentDbId,
+                  studentId: bestTemplate.studentId,
+                  studentName: bestTemplate.studentName,
+                  distance: bestDist,
+                  confidenceLabel: getConfidenceLabel(bestDist),
+                  expiresAt: now + STABLE_MATCH_LOCK_MS,
+                };
                 setActiveResult({
                   state: "recognized",
                   faceCount: 1,
@@ -380,9 +446,24 @@ export function useAttendanceRecognition(
                   studentName: bestTemplate.studentName,
                   distance: bestDist,
                   confidenceLabel: getConfidenceLabel(bestDist),
-                  statusMessage: `Recognized: ${bestTemplate.studentName}`,
+                  isStable: true,
+                  isLocked: false,
+                  statusMessage: `Stable match: ${bestTemplate.studentName}. Ready to record.`,
+                });
+              } else if (isMatch && bestTemplate) {
+                setActiveResult({
+                  state: "recognizing",
+                  faceCount: 1,
+                  studentDbId: bestTemplate.studentDbId,
+                  studentId: bestTemplate.studentId,
+                  studentName: bestTemplate.studentName,
+                  distance: bestDist,
+                  confidenceLabel: getConfidenceLabel(bestDist),
+                  statusMessage: "Verifying stable match...",
                 });
               } else {
+                // A clear but unknown face must pause recording immediately.
+                stableMatchRef.current = null;
                 setActiveResult({
                   state: "no_match",
                   faceCount: 1,
