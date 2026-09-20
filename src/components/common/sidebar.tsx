@@ -106,7 +106,6 @@ export function Sidebar({ role, mobileOpen = false, onMobileClose }: SidebarProp
           href: "/dashboard/admin/settings",
           icon: Settings,
           label: "Settings",
-          comingSoon: true,
         },
       ];
     }
@@ -143,7 +142,6 @@ export function Sidebar({ role, mobileOpen = false, onMobileClose }: SidebarProp
           href: "/dashboard/lecturer/settings",
           icon: Settings,
           label: "Settings",
-          comingSoon: true,
         },
       ];
     }
@@ -155,25 +153,21 @@ export function Sidebar({ role, mobileOpen = false, onMobileClose }: SidebarProp
           href: "/dashboard/student/courses",
           icon: BookOpen,
           label: "My Courses",
-          comingSoon: true,
         },
         {
           href: "/dashboard/student/schedule",
           icon: Clock,
           label: "My Schedule",
-          comingSoon: true,
         },
         {
           href: "/dashboard/student/attendance",
           icon: BarChart3,
           label: "My Attendance",
-          comingSoon: true,
         },
         {
           href: "/dashboard/student/settings",
           icon: Settings,
           label: "Settings",
-          comingSoon: true,
         },
       ];
     }

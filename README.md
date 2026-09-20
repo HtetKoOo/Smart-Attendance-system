@@ -16,9 +16,9 @@ This is an academic and portfolio project. Face recognition is an assistive atte
 
 | Role | Capabilities |
 | --- | --- |
-| **Admin** | Manage student and lecturer profiles, courses, classrooms, schedules, enrollments, face enrollment, recognition calibration, attendance recording, and CSV-ready history reports. |
-| **Lecturer** | View assigned courses, weekly teaching schedule, enrolled students, record attendance, and review history only for schedules assigned to that lecturer. |
-| **Student** | Create an account and access the student dashboard. |
+| **Admin** | Manage student and lecturer profiles, courses, classrooms, schedules, enrollments, face enrollment, recognition calibration, attendance recording, CSV-ready history reports, and account settings. |
+| **Lecturer** | View assigned courses, weekly teaching schedule, enrolled students, record attendance, review history only for assigned schedules, and manage account settings. |
+| **Student** | View enrolled courses, weekly class schedule, personal attendance history, face-enrollment readiness, and account settings. |
 
 ### Academic management
 
@@ -176,14 +176,14 @@ For a stronger portfolio presentation, add screenshots in `docs/screenshots/` an
 ## Current Limitations and Future Work
 
 - No liveness detection or anti-spoofing; the system must not be used as a high-security identity system.
-- Automatic late-status evaluation and student attendance self-service are future enhancements.
+- Automatic late-status evaluation remains a future enhancement.
 - Threshold values need controlled, consented real-world calibration before broader use.
-- Automated unit, API integration, and end-to-end test coverage are planned.
+- Core face-matching unit tests run in CI; broader API integration and end-to-end coverage are planned.
 - A formal biometric consent, retention, deletion, and access policy is required before institutional deployment.
 
 ## Project Status
 
-The core academic workflow, multi-template enrollment, local recognition test, protected attendance recording, and admin attendance reporting are complete as a portfolio-ready prototype. The project is actively being improved with stronger testing and production hardening.
+The core academic workflow, multi-template enrollment, local recognition test, protected attendance recording, role-scoped reports, and student self-service pages are complete as a portfolio-ready prototype. The project is actively being improved with broader testing and production hardening.
 
 ## License
 
