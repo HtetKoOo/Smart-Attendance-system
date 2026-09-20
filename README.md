@@ -138,14 +138,18 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-### Production checks
+### Quality checks
 
 ```bash
 pnpm prisma validate
 pnpm prisma generate
 pnpm lint
+pnpm typecheck
+pnpm test
 pnpm build
 ```
+
+GitHub Actions runs the same lint, typecheck, unit-test, and production-build checks on every push and pull request.
 
 ## Demo Flow
 
