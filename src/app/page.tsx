@@ -7,7 +7,7 @@ import {
   Users2,
   BookOpen,
   Clock,
-  BarChart3,
+  ClipboardCheck,
   GraduationCap,
 } from "lucide-react";
 
@@ -71,7 +71,7 @@ export default async function Home() {
           <FeatureCard
             icon={Users2}
             title="Student Management"
-            description="Manage students, enrollment, and track individual attendance records"
+            description="Manage linked student accounts, student records, and course enrollment"
           />
           <FeatureCard
             icon={BookOpen}
@@ -84,9 +84,9 @@ export default async function Home() {
             description="Create and manage class schedules with automatic time tracking"
           />
           <FeatureCard
-            icon={BarChart3}
-            title="Attendance Analytics"
-            description="View detailed attendance reports and analytics by student or course"
+            icon={ClipboardCheck}
+            title="Attendance Recording"
+            description="Record verified attendance with schedule-based checks and duplicate protection"
           />
         </div>
       </section>
@@ -100,15 +100,15 @@ export default async function Home() {
         <div className="grid gap-8 sm:grid-cols-3">
           <RoleCard
             title="Administrators"
-            description="Manage all students, lecturers, courses, and view system-wide attendance analytics"
+            description="Manage accounts, academic data, face enrollment, and attendance workflows"
           />
           <RoleCard
             title="Lecturers"
-            description="Track your students' attendance, view your courses, and manage your schedule"
+            description="View assigned course rosters and record attendance for your own schedules"
           />
           <RoleCard
             title="Students"
-            description="View your courses, check your attendance record, and stay updated on class schedules"
+            description="Register an account and access a student dashboard after profile linking"
           />
         </div>
       </section>
@@ -116,7 +116,7 @@ export default async function Home() {
       {/* Footer */}
       <footer className="border-t border-border/50 bg-background">
         <div className="mx-auto max-w-6xl px-4 py-8 text-center text-sm text-muted-foreground sm:px-6">
-          <p>KBU Smart Attendance System © 2025. All rights reserved.</p>
+          <p>KBU Smart Attendance System © 2026. All rights reserved.</p>
         </div>
       </footer>
     </main>

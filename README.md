@@ -16,8 +16,8 @@ This is an academic and portfolio project. Face recognition is an assistive atte
 
 | Role | Capabilities |
 | --- | --- |
-| **Admin** | Manage student and lecturer profiles, courses, classrooms, schedules, enrollments, face enrollment, recognition calibration, and attendance recording. |
-| **Lecturer** | View students enrolled in assigned courses and record attendance only for schedules assigned to that lecturer. |
+| **Admin** | Manage student and lecturer profiles, courses, classrooms, schedules, enrollments, face enrollment, recognition calibration, attendance recording, and CSV-ready history reports. |
+| **Lecturer** | View students enrolled in assigned courses, record attendance, and review history only for schedules assigned to that lecturer. |
 | **Student** | Create an account and access the student dashboard. |
 
 ### Academic management
@@ -43,6 +43,8 @@ This is an academic and portfolio project. Face recognition is an assistive atte
 - The server verifies the selected schedule, course enrollment, user role, and lecturer ownership.
 - Each student can only be recorded once per class schedule per date through database-level duplicate protection.
 - Attendance payloads deliberately exclude camera frames and biometric descriptors.
+- Admins can filter recorded attendance by date range, class schedule, and status, then export the selected history as CSV.
+- Lecturer attendance history is server-scoped to only the class schedules assigned to that lecturer.
 
 ## Architecture
 
@@ -164,19 +166,20 @@ For a stronger portfolio presentation, add screenshots in `docs/screenshots/` an
 - Student/lecturer account-linking dialog
 - Face enrollment sample-progress screen
 - Face recognition result and ambiguity state
+- Attendance History report with filters and CSV export
 - Attendance recording screen and recent attendance list
 
 ## Current Limitations and Future Work
 
 - No liveness detection or anti-spoofing; the system must not be used as a high-security identity system.
-- Attendance reporting, automatic late-status evaluation, and student attendance self-service are future enhancements.
+- Automatic late-status evaluation and student attendance self-service are future enhancements.
 - Threshold values need controlled, consented real-world calibration before broader use.
 - Automated unit, API integration, and end-to-end test coverage are planned.
 - A formal biometric consent, retention, deletion, and access policy is required before institutional deployment.
 
 ## Project Status
 
-The core academic workflow, multi-template enrollment, local recognition test, and protected attendance recording are complete as a portfolio-ready prototype. The project is actively being improved with stronger testing, reporting, and production hardening.
+The core academic workflow, multi-template enrollment, local recognition test, protected attendance recording, and admin attendance reporting are complete as a portfolio-ready prototype. The project is actively being improved with stronger testing and production hardening.
 
 ## License
 
