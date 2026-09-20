@@ -12,6 +12,7 @@ interface NavItemProps {
   disabled?: boolean;
   comingSoon?: boolean;
   showLabel?: boolean;
+  exact?: boolean;
 }
 
 export function NavItem({
@@ -21,9 +22,10 @@ export function NavItem({
   disabled = false,
   comingSoon = false,
   showLabel = false,
+  exact = false,
 }: NavItemProps) {
   const pathname = usePathname();
-  const isActive = pathname === href || pathname.startsWith(`${href}/`);
+  const isActive = pathname === href || (!exact && pathname.startsWith(`${href}/`));
 
   return (
     <Link
