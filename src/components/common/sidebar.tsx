@@ -11,7 +11,6 @@ import {
   Clock,
   BarChart3,
   Settings,
-  ScanFace,
   UserCheck,
   Eye,
   ClipboardCheck,
@@ -26,6 +25,11 @@ interface NavItemConfig {
   icon: LucideIcon;
   label: string;
   comingSoon?: boolean;
+}
+
+interface NavSection {
+  label?: string;
+  items: NavItemConfig[];
 }
 
 interface SidebarProps {
@@ -94,15 +98,9 @@ export function Sidebar({ role, mobileOpen = false, onMobileClose }: SidebarProp
           label: "Course Enrollments",
         },
         {
-          href: "/dashboard/admin/face-recognition",
-          icon: ScanFace,
-          label: "Face Detection",
-        },
-        {
           href: "/dashboard/admin/attendance",
           icon: BarChart3,
-          label: "Attendance",
-          comingSoon: true,
+          label: "Attendance History",
         },
         {
           href: "/dashboard/admin/settings",
@@ -127,11 +125,6 @@ export function Sidebar({ role, mobileOpen = false, onMobileClose }: SidebarProp
           label: "Record Attendance",
         },
         {
-          href: "/dashboard/admin/face-recognition",
-          icon: ScanFace,
-          label: "Face Detection",
-        },
-        {
           href: "/dashboard/lecturer/courses",
           icon: BookOpen,
           label: "My Courses",
@@ -146,8 +139,7 @@ export function Sidebar({ role, mobileOpen = false, onMobileClose }: SidebarProp
         {
           href: "/dashboard/lecturer/attendance",
           icon: BarChart3,
-          label: "Attendance",
-          comingSoon: true,
+          label: "My Attendance History",
         },
         {
           href: "/dashboard/lecturer/settings",
@@ -193,18 +185,74 @@ export function Sidebar({ role, mobileOpen = false, onMobileClose }: SidebarProp
 
   const navItems = getNavItems();
 
+  const navSections: NavSection[] =
+    role === "ADMIN"
+      ? [
+          { items: navItems.filter((item) => item.href === "/dashboard") },
+          {
+            label: "Academic Management",
+            items: navItems.filter((item) =>
+              [
+                "/dashboard/admin/students",
+                "/dashboard/admin/lecturers",
+                "/dashboard/admin/courses",
+                "/dashboard/admin/classrooms",
+                "/dashboard/admin/schedules",
+                "/dashboard/admin/enrollments",
+              ].includes(item.href),
+            ),
+          },
+          {
+            label: "Attendance",
+            items: navItems.filter((item) =>
+              [
+                "/dashboard/admin/face-enrollment",
+                "/dashboard/attendance/record",
+                "/dashboard/admin/attendance",
+              ].includes(item.href),
+            ),
+          },
+          {
+            label: "Advanced Tools",
+            items: navItems.filter((item) =>
+              [
+                "/dashboard/admin/face-recognition-test",
+                "/dashboard/admin/face-calibration",
+              ].includes(item.href),
+            ),
+          },
+          {
+            label: "Settings",
+            items: navItems.filter(
+              (item) => item.href === "/dashboard/admin/settings",
+            ),
+          },
+        ]
+      : [{ items: navItems }];
+
   const navigation = (showLabel = false, onNavigate?: () => void) => (
-    <nav className="flex-1 space-y-1 overflow-y-auto p-4">
-      {navItems.map((item) => (
-        <div key={item.href} onClick={onNavigate}>
-          <NavItem
-            href={item.href}
-            icon={item.icon}
-            label={item.label}
-            comingSoon={item.comingSoon}
-            showLabel={showLabel}
-          />
-        </div>
+    <nav className="flex-1 space-y-5 overflow-y-auto p-4">
+      {navSections.map((section, sectionIndex) => (
+        <section key={section.label ?? `navigation-${sectionIndex}`}>
+          {section.label && (
+            <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/55">
+              {section.label}
+            </p>
+          )}
+          <div className="space-y-1">
+            {section.items.map((item) => (
+              <div key={item.href} onClick={onNavigate}>
+                <NavItem
+                  href={item.href}
+                  icon={item.icon}
+                  label={item.label}
+                  comingSoon={item.comingSoon}
+                  showLabel={showLabel}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
       ))}
     </nav>
   );
