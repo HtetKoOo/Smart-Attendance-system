@@ -17,7 +17,7 @@ This is an academic and portfolio project. Face recognition is an assistive atte
 | Role | Capabilities |
 | --- | --- |
 | **Admin** | Manage student and lecturer profiles, courses, classrooms, schedules, enrollments, face enrollment, recognition calibration, attendance recording, and CSV-ready history reports. |
-| **Lecturer** | View students enrolled in assigned courses, record attendance, and review history only for schedules assigned to that lecturer. |
+| **Lecturer** | View assigned courses, weekly teaching schedule, enrolled students, record attendance, and review history only for schedules assigned to that lecturer. |
 | **Student** | Create an account and access the student dashboard. |
 
 ### Academic management

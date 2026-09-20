@@ -128,13 +128,11 @@ export function Sidebar({ role, mobileOpen = false, onMobileClose }: SidebarProp
           href: "/dashboard/lecturer/courses",
           icon: BookOpen,
           label: "My Courses",
-          comingSoon: true,
         },
         {
           href: "/dashboard/lecturer/schedule",
           icon: Clock,
           label: "My Schedule",
-          comingSoon: true,
         },
         {
           href: "/dashboard/lecturer/attendance",
