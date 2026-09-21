@@ -1,14 +1,14 @@
 # KBU Smart Attendance System
 
-> A role-based university attendance platform with privacy-conscious, browser-based face recognition.
+> **Academic Seminar Project** — A role-based university attendance platform with privacy-conscious, browser-based face recognition.
 
-[Live Demo](https://kbu-smart-attendance-system.vercel.app) · [Report a Bug](https://github.com/HtetKoOo/Smart-Attendance-system/issues) · [Request a Feature](https://github.com/HtetKoOo/Smart-Attendance-system/issues)
+[Live Demo](https://kbu-smart-attendance.vercel.app) · [Report a Bug](https://github.com/HtetKoOo/Smart-Attendance-system/issues) · [Request a Feature](https://github.com/HtetKoOo/Smart-Attendance-system/issues)
 
 ## Overview
 
 KBU Smart Attendance System helps administrators and lecturers manage academic data and record classroom attendance. A web camera generates a numeric face descriptor in the browser, compares it with enrolled student templates locally, and sends only verified student and schedule identifiers to the server when attendance is recorded.
 
-This is an academic and portfolio project. Face recognition is an assistive attendance workflow, not an identity-verification or anti-spoofing system.
+This is an academic seminar and portfolio project, not an official university production service. Face recognition is an assistive attendance workflow, not an identity-verification or anti-spoofing system.
 
 ## Key Features
 

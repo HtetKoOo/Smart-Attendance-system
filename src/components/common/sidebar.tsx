@@ -258,7 +258,7 @@ export function Sidebar({ role, mobileOpen = false, onMobileClose }: SidebarProp
     <>
       <aside className="fixed left-0 top-0 z-50 hidden h-screen w-64 border-r border-sidebar-border bg-sidebar lg:flex lg:flex-col">
         <div className="flex h-16 shrink-0 items-center border-b border-sidebar-border px-4">
-          <Logo />
+          <Logo showProjectLabel />
         </div>
         {navigation()}
       </aside>
@@ -273,7 +273,7 @@ export function Sidebar({ role, mobileOpen = false, onMobileClose }: SidebarProp
           />
           <aside className="relative flex h-full w-72 flex-col border-r border-sidebar-border bg-sidebar shadow-xl">
             <div className="flex h-16 shrink-0 items-center border-b border-sidebar-border px-4">
-              <Logo />
+              <Logo showProjectLabel />
             </div>
             {navigation(true, onMobileClose)}
           </aside>
