@@ -1,0 +1,2 @@
+# Prebuilt third-party MediaPipe WASM runtime files.
+/public/wasm/*.js linguist-vendored
