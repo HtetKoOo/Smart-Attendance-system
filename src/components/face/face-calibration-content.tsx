@@ -54,7 +54,7 @@ export function FaceCalibrationContent() {
             )}
           </div>
           <div className="relative aspect-video bg-neutral-950 flex items-center justify-center">
-            <video ref={videoRef} autoPlay playsInline muted className={isCameraActive ? "w-full h-full object-cover" : "hidden"} />
+            <video ref={videoRef} autoPlay playsInline muted style={{ transform: "scaleX(-1)" }} className={isCameraActive ? "w-full h-full object-cover" : "hidden"} />
             <canvas ref={canvasRef} className={isCameraActive ? "absolute inset-0 w-full h-full pointer-events-none" : "hidden"} />
             {!isCameraActive && <p className="text-sm text-neutral-400">Start the camera to begin calibration.</p>}
           </div>

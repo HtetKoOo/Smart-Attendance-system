@@ -56,6 +56,7 @@ export function CameraView({
           autoPlay
           playsInline
           muted
+          style={{ transform: "scaleX(-1)" }}
           className={`w-full h-full object-cover transition-opacity duration-300 ${
             isActive ? "opacity-100" : "opacity-0 absolute"
           }`}

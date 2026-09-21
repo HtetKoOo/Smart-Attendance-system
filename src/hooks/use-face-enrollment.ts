@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { mirrorOverlayX } from "@/lib/camera-overlay";
 import type * as FaceApiTypes from "@vladmandic/face-api";
+import {
+  analyzeEnrollmentPose,
+  getEnrollmentPoseInstruction,
+  getExpectedEnrollmentPose,
+  isEnrollmentPoseAccepted,
+} from "@/lib/face-enrollment-pose";
 
 export interface EnrollmentState {
   isReadyForCapture: boolean;
@@ -53,14 +60,11 @@ export function useFaceEnrollment(
   const [isCapturing, setIsCapturing] = useState(false);
   const [captureStep, setCaptureStep] = useState(0);
   const totalSteps = 10;
+  const [captureInstruction, setCaptureInstruction] = useState(
+    getEnrollmentPoseInstruction("center"),
+  );
   const [enrollmentError, setEnrollmentError] = useState<string | null>(null);
   const [enrollmentSuccess, setEnrollmentSuccess] = useState(false);
-
-  const getCaptureInstruction = (step: number) => {
-    if (step <= 4) return "Look straight ahead and keep still.";
-    if (step <= 7) return "Turn your face slightly to your left.";
-    return "Turn your face slightly to your right.";
-  };
 
   // Initialize face-api models from local /models/face-api/
   useEffect(() => {
@@ -214,7 +218,11 @@ export function useFaceEnrollment(
               const scaleX = displayWidth / video.videoWidth;
               const scaleY = displayHeight / video.videoHeight;
 
-              const faceBoxX = box.x * scaleX;
+              const faceBoxX = mirrorOverlayX(
+                displayWidth,
+                box.x * scaleX,
+                box.width * scaleX,
+              );
               const faceBoxY = box.y * scaleY;
               const faceBoxWidth = box.width * scaleX;
               const faceBoxHeight = box.height * scaleY;
@@ -291,9 +299,10 @@ export function useFaceEnrollment(
     setEnrollmentError(null);
     setEnrollmentSuccess(false);
     setCaptureStep(0);
+    setCaptureInstruction(getEnrollmentPoseInstruction("center"));
   }, []);
 
-  // Multi-sample capture and consistency verification
+  // Multi-sample capture with verified center/left/right head poses.
   const captureEnrollment = useCallback(
     async (studentId: string): Promise<boolean> => {
       const video = videoRef.current;
@@ -304,6 +313,12 @@ export function useFaceEnrollment(
         return false;
       }
 
+      const stableFramesRequired = 3;
+      const poseTimeoutMs = 12_000;
+      const detectionIntervalMs = 120;
+      const wait = (milliseconds: number) =>
+        new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
+
       setIsCapturing(true);
       setEnrollmentError(null);
       setEnrollmentSuccess(false);
@@ -312,95 +327,133 @@ export function useFaceEnrollment(
       const capturedDescriptors: Float32Array[] = [];
 
       try {
-        for (let i = 0; i < totalSteps; i++) {
-          setCaptureStep(i + 1);
+        for (let i = 0; i < totalSteps; i += 1) {
+          const step = i + 1;
+          const expectedPose = getExpectedEnrollmentPose(step);
+          const baseInstruction = getEnrollmentPoseInstruction(expectedPose);
+          const deadline = performance.now() + poseTimeoutMs;
+          let stableFrames = 0;
+          let acceptedDescriptor: Float32Array | null = null;
 
-          // Detect ALL faces so that a second face entering the frame during capture is caught
-          const allDetections = await faceapi
-            .detectAllFaces(
-              video,
-              new faceapi.SsdMobilenetv1Options({ minConfidence: 0.65 }),
-            )
-            .withFaceLandmarks()
-            .withFaceDescriptors();
+          setCaptureStep(step);
+          setCaptureInstruction(baseInstruction);
 
-          // Reject if not exactly one face in frame at capture time
-          if (allDetections.length === 0) {
-            throw new Error(
-              `Sample ${i + 1} failed: No face detected. Look directly at the camera and hold still.`,
-            );
-          }
-          if (allDetections.length > 1) {
-            throw new Error(
-              `Sample ${i + 1} failed: ${allDetections.length} faces detected. Only one person may be in view during enrollment capture.`,
-            );
-          }
+          while (performance.now() < deadline && !acceptedDescriptor) {
+            const allDetections = await faceapi
+              .detectAllFaces(
+                video,
+                new faceapi.SsdMobilenetv1Options({ minConfidence: 0.65 }),
+              )
+              .withFaceLandmarks()
+              .withFaceDescriptors();
 
-          const detection = allDetections[0];
+            if (allDetections.length !== 1) {
+              stableFrames = 0;
+              setCaptureInstruction(
+                allDetections.length === 0
+                  ? "No face detected. Return to the guide to continue."
+                  : "Multiple faces detected. Matching is paused until only one face remains.",
+              );
+              await wait(detectionIntervalMs);
+              continue;
+            }
 
-          // Re-validate confidence for this sample
-          if (detection.detection.score < 0.65) {
-            throw new Error(
-              `Sample ${i + 1} failed: Low confidence (${Math.round(detection.detection.score * 100)}%). Improve lighting and hold still.`,
-            );
-          }
-
-          // Re-validate centering and size
-          const vidW = video.videoWidth;
-          const vidH = video.videoHeight;
-          if (vidW > 0 && vidH > 0) {
+            const detection = allDetections[0];
             const box = detection.detection.box;
+            const vidW = video.videoWidth;
+            const vidH = video.videoHeight;
             const faceCenterX = box.x + box.width / 2;
             const faceCenterY = box.y + box.height / 2;
-            const maxOffsetX = vidW * 0.18;
-            const maxOffsetY = vidH * 0.18;
             const isCentered =
-              Math.abs(faceCenterX - vidW / 2) < maxOffsetX &&
-              Math.abs(faceCenterY - vidH / 2) < maxOffsetY;
+              vidW > 0 &&
+              vidH > 0 &&
+              Math.abs(faceCenterX - vidW / 2) < vidW * 0.18 &&
+              Math.abs(faceCenterY - vidH / 2) < vidH * 0.18;
             const isGoodSize =
-              box.height >= vidH * 0.25 && box.height <= vidH * 0.75;
+              vidH > 0 && box.height >= vidH * 0.25 && box.height <= vidH * 0.75;
 
-            if (!isCentered) {
-              throw new Error(
-                `Sample ${i + 1} failed: Face is not centered. Position your face within the oval guide.`,
-              );
+            if (detection.detection.score < 0.65 || !isCentered || !isGoodSize) {
+              stableFrames = 0;
+              if (detection.detection.score < 0.65) {
+                setCaptureInstruction("Face is unclear. Improve lighting and hold still.");
+              } else if (!isCentered) {
+                setCaptureInstruction("Center your face in the oval guide.");
+              } else {
+                setCaptureInstruction(
+                  box.height < vidH * 0.25
+                    ? "Move slightly closer to the camera."
+                    : "Move slightly back from the camera.",
+                );
+              }
+              await wait(detectionIntervalMs);
+              continue;
             }
-            if (!isGoodSize) {
-              throw new Error(
-                `Sample ${i + 1} failed: Face is too ${box.height < vidH * 0.25 ? "small (move closer)" : "large (move back)"}.`,
-              );
+
+            const poseAnalysis = analyzeEnrollmentPose({
+              leftEye: detection.landmarks.getLeftEye(),
+              rightEye: detection.landmarks.getRightEye(),
+              nose: detection.landmarks.getNose(),
+            });
+
+            if (
+              !poseAnalysis ||
+              !isEnrollmentPoseAccepted(poseAnalysis, expectedPose)
+            ) {
+              stableFrames = 0;
+              if (poseAnalysis && Math.abs(poseAnalysis.rollDegrees) > 12) {
+                setCaptureInstruction("Keep your head upright, then hold still.");
+              } else {
+                setCaptureInstruction(baseInstruction);
+              }
+              await wait(detectionIntervalMs);
+              continue;
             }
+
+            if (!detection.descriptor || detection.descriptor.length !== 128) {
+              stableFrames = 0;
+              setCaptureInstruction("Unable to create a face template. Hold still and retry.");
+              await wait(detectionIntervalMs);
+              continue;
+            }
+
+            stableFrames += 1;
+            setCaptureInstruction(
+              `Correct pose. Hold still (${stableFrames}/${stableFramesRequired}).`,
+            );
+
+            if (stableFrames >= stableFramesRequired) {
+              acceptedDescriptor = detection.descriptor;
+              break;
+            }
+            await wait(detectionIntervalMs);
           }
 
-          if (!detection.descriptor || detection.descriptor.length !== 128) {
-            throw new Error("Invalid descriptor generated by model.");
+          if (!acceptedDescriptor) {
+            throw new Error(
+              `Sample ${step} timed out. ${baseInstruction} Keep one clear face centered in the guide.`,
+            );
           }
 
-          capturedDescriptors.push(detection.descriptor);
-
-          // A short gap captures natural micro-variations without retaining frames.
-          if (i < totalSteps - 1) {
-            await new Promise((res) => setTimeout(res, 250));
-          }
+          capturedDescriptors.push(acceptedDescriptor);
+          setCaptureInstruction(`Sample ${step} captured.`);
+          if (i < totalSteps - 1) await wait(180);
         }
 
         // Reject a capture set that is too inconsistent to safely represent one person.
-        for (let i = 0; i < capturedDescriptors.length; i++) {
-          for (let j = i + 1; j < capturedDescriptors.length; j++) {
+        for (let i = 0; i < capturedDescriptors.length; i += 1) {
+          for (let j = i + 1; j < capturedDescriptors.length; j += 1) {
             const distance = faceapi.euclideanDistance(
               capturedDescriptors[i],
               capturedDescriptors[j],
             );
             if (distance > 0.52) {
               throw new Error(
-                "Face samples were inconsistent. Please remain still during the capture sequence.",
+                "Face samples were inconsistent. Please repeat enrollment with the same person and steady lighting.",
               );
             }
           }
         }
 
-        // Build three normalized templates: frontal, slightly left, and slightly right.
-        // Only these numeric vectors are sent; raw samples and camera frames stay local.
         const templateGroups = [
           capturedDescriptors.slice(0, 4),
           capturedDescriptors.slice(4, 7),
@@ -419,26 +472,20 @@ export function useFaceEnrollment(
           return Array.from(averaged, (value) => (norm > 0 ? value / norm : value));
         });
 
-        // Submit verified numeric vectors to the ADMIN-only API route.
         const response = await fetch("/api/admin/face-enrollment", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            studentId,
-            embeddings,
-          }),
+          body: JSON.stringify({ studentId, embeddings }),
         });
-
         const result = await response.json();
-
         if (!response.ok) {
           throw new Error(result.error || "Failed to store face enrollment.");
         }
 
+        setCaptureInstruction("Enrollment completed.");
         setEnrollmentSuccess(true);
         return true;
       } catch (err: unknown) {
-        console.error("Capture enrollment error:", err);
         setEnrollmentError(
           err instanceof Error
             ? err.message
@@ -481,7 +528,7 @@ export function useFaceEnrollment(
     isCapturing,
     captureStep,
     totalSteps,
-    captureInstruction: getCaptureInstruction(captureStep || 1),
+    captureInstruction,
     enrollmentError,
     enrollmentSuccess,
     captureEnrollment,

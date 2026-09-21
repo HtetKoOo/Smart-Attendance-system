@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { countFaceTemplatesByStudent } from "@/lib/face-template-counts";
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,19 +26,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Return all enrolled student IDs
+    // Return every template row so each student's real template count is preserved.
     const enrollments = await prisma.faceEmbedding.findMany({
       select: { studentId: true },
-      distinct: ["studentId"],
     });
 
-    const templateCounts = enrollments.reduce<Record<string, number>>(
-      (counts, enrollment) => {
-        counts[enrollment.studentId] = (counts[enrollment.studentId] || 0) + 1;
-        return counts;
-      },
-      {},
-    );
+    const templateCounts = countFaceTemplatesByStudent(enrollments);
     const enrolledStudentIds = Object.keys(templateCounts);
     return NextResponse.json({ enrolledStudentIds, templateCounts });
   } catch (error) {
@@ -163,20 +157,20 @@ export async function POST(request: NextRequest) {
 
     const verifiedTemplates = templatesToStore as number[][];
 
-    // Atomically replace every prior template with the newly verified templates.
-    const templateCount = await prisma.$transaction(async (tx) => {
-      await tx.faceEmbedding.deleteMany({
+    // Atomically replace every prior template. A batch transaction avoids the
+    // short-lived interactive transaction timeout on remote/serverless databases.
+    const [, createResult] = await prisma.$transaction([
+      prisma.faceEmbedding.deleteMany({
         where: { studentId },
-      });
-
-      const result = await tx.faceEmbedding.createMany({
+      }),
+      prisma.faceEmbedding.createMany({
         data: verifiedTemplates.map((template) => ({
           studentId,
           embedding: template,
         })),
-      });
-      return result.count;
-    });
+      }),
+    ]);
+    const templateCount = createResult.count;
 
     return NextResponse.json({
       success: true,

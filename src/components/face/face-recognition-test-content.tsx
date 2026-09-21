@@ -284,6 +284,7 @@ export function FaceRecognitionTestContent() {
             autoPlay
             playsInline
             muted
+            style={{ transform: "scaleX(-1)" }}
             className={`w-full h-full object-cover transition-opacity duration-300 ${isCameraActive ? "opacity-100" : "opacity-0 absolute"}`}
           />
 
