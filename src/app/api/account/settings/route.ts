@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
+import { validateAccountSettingsPayload } from "@/lib/account-settings-validation";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
 
 const MAX_BODY_BYTES = 4096;
-const ALLOWED_KEYS = new Set(["name"]);
 
 export async function PATCH(request: Request) {
   try {
@@ -26,31 +26,14 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
     }
 
-    if (!body || typeof body !== "object" || Array.isArray(body)) {
-      return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
-    }
-
-    const payload = body as Record<string, unknown>;
-    const unexpectedKey = Object.keys(payload).find((key) => !ALLOWED_KEYS.has(key));
-    if (unexpectedKey) {
-      return NextResponse.json({ error: `Unexpected field: ${unexpectedKey}.` }, { status: 400 });
-    }
-
-    if (typeof payload.name !== "string") {
-      return NextResponse.json({ error: "Name is required." }, { status: 400 });
-    }
-
-    const name = payload.name.trim();
-    if (name.length < 2 || name.length > 80) {
-      return NextResponse.json(
-        { error: "Name must be between 2 and 80 characters." },
-        { status: 400 },
-      );
+    const validation = validateAccountSettingsPayload(body);
+    if (!validation.ok) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
     const user = await prisma.user.update({
       where: { id: session.user.id },
-      data: { name },
+      data: { name: validation.name },
       select: { id: true, name: true, email: true, role: true },
     });
 
