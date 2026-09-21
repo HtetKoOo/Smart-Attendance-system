@@ -164,17 +164,19 @@ GitHub Actions runs the same lint, typecheck, unit-test, and production-build ch
 6. After a stable, unambiguous recognition result, select **Record Attendance**.
 7. The server verifies the request before creating an idempotent attendance record.
 
-## Screenshots to Add
+## Screenshots
 
-For a stronger portfolio presentation, add screenshots in `docs/screenshots/` and link them here:
+| Landing Page | Admin Dashboard |
+| --- | --- |
+| ![KBU Smart Attendance System landing page](docs/screenshots/landing-page.png) | ![Admin dashboard with live system statistics](docs/screenshots/admin-dashboard.png) |
 
-- Landing page and login screen
-- Admin dashboard on desktop and mobile
-- Student/lecturer account-linking dialog
-- Face enrollment sample-progress screen
-- Face recognition result and ambiguity state
-- Attendance History report with filters and CSV export
-- Attendance recording screen and recent attendance list
+| Recognition Calibration | Attendance Recording |
+| --- | --- |
+| ![Face-recognition threshold calibration screen](docs/screenshots/recognition-calibration.png) | ![Schedule-scoped attendance recording screen](docs/screenshots/record-attendance.png) |
+
+### Attendance History and Reports
+
+![Attendance history with filters, summary statistics, and CSV export](docs/screenshots/attendance-history.png)
 
 ## Current Limitations and Future Work
 
