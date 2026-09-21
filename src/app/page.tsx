@@ -38,7 +38,7 @@ export default async function Home() {
         <div className="text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-medium">
             <GraduationCap className="size-4" />
-            KBU Smart Attendance System
+            Academic Seminar Project
           </div>
 
           <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
@@ -51,6 +51,11 @@ export default async function Home() {
           <p className="mb-8 text-lg text-muted-foreground sm:text-xl">
             Streamline student attendance tracking with modern face recognition
             technology. Built for universities and educational institutions.
+          </p>
+
+          <p className="-mt-4 mb-8 text-sm text-muted-foreground">
+            Built for academic demonstration and portfolio use. This is not an
+            official university production service.
           </p>
 
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">

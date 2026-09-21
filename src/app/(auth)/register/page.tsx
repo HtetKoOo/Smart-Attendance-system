@@ -18,6 +18,9 @@ export default async function RegisterPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center">
+        <p className="mx-auto w-fit rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
+          Academic Seminar Project
+        </p>
         <h1 className="text-2xl font-bold">Create an Account</h1>
         <p className="text-sm text-muted-foreground">
           Sign up to get started with KBU Smart Attendance

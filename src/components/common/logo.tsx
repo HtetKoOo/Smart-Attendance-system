@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { GraduationCap } from "lucide-react";
 
-export function Logo() {
+interface LogoProps {
+  showProjectLabel?: boolean;
+}
+
+export function Logo({ showProjectLabel = false }: LogoProps) {
   return (
     <Link
       href="/"
@@ -10,7 +14,14 @@ export function Logo() {
       <div className="shrink-0 rounded-lg bg-primary p-1.5">
         <GraduationCap className="size-5 text-primary-foreground" />
       </div>
-      <span className="hidden text-sm leading-tight sm:inline">KBU Smart Attendance System</span>
+      <span className="hidden min-w-0 sm:block">
+        <span className="block text-sm leading-tight">KBU Smart Attendance System</span>
+        {showProjectLabel && (
+          <span className="mt-0.5 block text-[10px] font-medium uppercase tracking-wide text-sidebar-foreground/65">
+            Academic Seminar Project
+          </span>
+        )}
+      </span>
     </Link>
   );
 }
