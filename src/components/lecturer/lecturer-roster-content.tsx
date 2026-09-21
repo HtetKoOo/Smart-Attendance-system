@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, Search, Users, AlertCircle } from "lucide-react";
+import { Search, Users, AlertCircle } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Course {
   id: string;
@@ -99,9 +100,10 @@ export function LecturerRosterContent() {
       <div className="border border-border bg-card rounded-xl p-5 shadow-sm space-y-4">
         <h2 className="font-semibold">Select a Course</h2>
         {loadingCourses ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Loading your courses…
-          </div>
+<div className="space-y-3" aria-label="Loading courses">
+  <Skeleton className="h-4 w-28" />
+  <Skeleton className="h-10 w-full max-w-sm" />
+</div>
         ) : courseError ? (
           <div className="flex items-center gap-2 text-sm text-destructive border border-destructive/50 rounded-lg p-3 bg-destructive/10">
             <AlertCircle className="h-4 w-4 shrink-0" />
@@ -149,9 +151,15 @@ export function LecturerRosterContent() {
 
           <div className="divide-y divide-border">
             {loadingRoster ? (
-              <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" /> Loading roster…
-              </div>
+Array.from({ length: 5 }, (_, index) => (
+  <div key={`roster-skeleton-${index}`} className="flex items-center justify-between px-5 py-4">
+    <div className="flex items-center gap-4">
+      <Skeleton className="size-9 rounded-full" />
+      <div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-3 w-48" /></div>
+    </div>
+    <Skeleton className="h-3 w-24" />
+  </div>
+))
             ) : rosterError ? (
               <div className="flex items-center gap-2 text-sm text-destructive p-5">
                 <AlertCircle className="h-4 w-4 shrink-0" />

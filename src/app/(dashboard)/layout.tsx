@@ -1,4 +1,5 @@
-import { getSession, getCurrentUser, getUserRole } from "@/lib/session";
+import { getSession } from "@/lib/session";
+import type { Role } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { DashboardNavigation } from "@/components/common/dashboard-navigation";
 
@@ -16,16 +17,12 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  const user = await getCurrentUser();
-  const role = await getUserRole();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const user = session.user;
+  const role = (user.role as Role | undefined) ?? undefined;
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <DashboardNavigation user={user} role={role || undefined} />
+      <DashboardNavigation user={user} role={role} />
 
       <div className="flex flex-1 flex-col lg:ml-64">
         <main className="flex-1">

@@ -1,17 +1,18 @@
 import { headers } from "next/headers";
+import { cache } from "react";
 import { auth, type Session, type User } from "@/lib/auth";
 import type { Role } from "@prisma/client";
 
 /**
  * Retrieve the current authenticated Better Auth session on the server.
  */
-export async function getSession(): Promise<Session | null> {
+export const getSession = cache(async (): Promise<Session | null> => {
   const reqHeaders = await headers();
   const session = await auth.api.getSession({
     headers: reqHeaders,
   });
   return session;
-}
+});
 
 /**
  * Retrieve the current authenticated user object.

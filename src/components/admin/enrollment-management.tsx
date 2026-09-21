@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, Plus, Trash2, Search, AlertCircle, CheckCircle2, Info, X } from "lucide-react";
 
 interface Student {
@@ -248,9 +249,11 @@ export function EnrollmentManagementContent() {
         </h2>
 
         {loadingDropdowns ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
-            <Loader2 className="h-4 w-4 animate-spin" /> Loading students and courses...
-          </div>
+<div className="grid grid-cols-1 gap-5 md:grid-cols-2" aria-label="Loading enrollment choices">
+  {Array.from({ length: 2 }, (_, index) => (
+    <div key={index} className="space-y-3"><Skeleton className="h-4 w-20" /><Skeleton className="h-10 w-full" /><Skeleton className="h-36 w-full" /></div>
+  ))}
+</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Student selector */}
@@ -372,9 +375,12 @@ export function EnrollmentManagementContent() {
 
         <div className="divide-y divide-border">
           {loadingEnrollments ? (
-            <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading enrollments…
-            </div>
+Array.from({ length: 5 }, (_, index) => (
+  <div key={`enrollment-skeleton-${index}`} className="flex items-center justify-between px-5 py-4">
+    <div className="space-y-2"><Skeleton className="h-4 w-48" /><Skeleton className="h-3 w-64" /></div>
+    <Skeleton className="size-8 rounded-md" />
+  </div>
+))
           ) : enrollments.length === 0 ? (
             <div className="py-12 text-center text-sm text-muted-foreground">
               No enrollments found. Try adjusting your filters or enroll a student above.

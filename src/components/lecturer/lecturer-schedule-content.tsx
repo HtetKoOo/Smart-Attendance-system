@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, CalendarClock, Loader2, MapPin } from "lucide-react";
+import { AlertCircle, CalendarClock, MapPin } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Schedule {
   id: string;
@@ -16,6 +17,19 @@ const days = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"
 
 function formatDay(day: string) {
   return `${day.slice(0, 1)}${day.slice(1).toLowerCase()}`;
+}
+
+function ScheduleSkeleton() {
+  return (
+    <div className="grid gap-5 xl:grid-cols-2" aria-label="Loading schedule">
+      {Array.from({ length: 6 }, (_, index) => (
+        <div key={index} className="rounded-xl border border-border bg-card shadow-sm">
+          <div className="border-b border-border px-5 py-4"><Skeleton className="h-5 w-24" /><Skeleton className="mt-2 h-3 w-16" /></div>
+          <div className="space-y-3 p-5"><Skeleton className="h-4 w-16" /><Skeleton className="h-3 w-48" /><Skeleton className="h-6 w-28" /></div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export function LecturerScheduleContent() {
@@ -46,7 +60,7 @@ export function LecturerScheduleContent() {
     <div className="space-y-8">
       <div><h1 className="text-3xl font-bold tracking-tight">My Schedule</h1><p className="mt-2 text-muted-foreground">Your weekly teaching timetable, based on assigned class schedules.</p></div>
       {loading ? (
-        <div className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-16 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading your schedule…</div>
+        <ScheduleSkeleton />
       ) : error ? (
         <div className="flex items-center gap-2 rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive"><AlertCircle className="h-4 w-4 shrink-0" />{error}</div>
       ) : schedules.length === 0 ? (

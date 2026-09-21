@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, BookOpen, CalendarDays, Loader2, MapPin } from "lucide-react";
+import { AlertCircle, BookOpen, CalendarDays, MapPin } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Schedule {
   id: string;
@@ -16,6 +17,19 @@ const dayOrder = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATUR
 
 function formatDay(day: string) {
   return `${day.slice(0, 1)}${day.slice(1).toLowerCase()}`;
+}
+
+function CoursesSkeleton() {
+  return (
+    <div className="grid gap-5 lg:grid-cols-2" aria-label="Loading courses">
+      {Array.from({ length: 2 }, (_, index) => (
+        <div key={index} className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+          <div className="border-b border-border bg-primary/5 p-5"><div className="flex gap-3"><Skeleton className="size-10 rounded-lg" /><div className="space-y-2"><Skeleton className="h-4 w-16" /><Skeleton className="h-5 w-44" /></div></div></div>
+          <div className="space-y-3 p-5"><Skeleton className="h-3 w-28" />{Array.from({ length: 2 }, (_, sessionIndex) => <div key={sessionIndex} className="rounded-lg border border-border/70 p-3"><Skeleton className="h-4 w-40" /><Skeleton className="mt-2 h-3 w-28" /></div>)}</div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export function LecturerCoursesContent() {
@@ -58,7 +72,7 @@ export function LecturerCoursesContent() {
         <p className="mt-2 text-muted-foreground">Courses and class sessions assigned to your lecturer account.</p>
       </div>
       {loading ? (
-        <div className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-16 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading your courses…</div>
+        <CoursesSkeleton />
       ) : error ? (
         <div className="flex items-center gap-2 rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive"><AlertCircle className="h-4 w-4 shrink-0" />{error}</div>
       ) : courses.length === 0 ? (

@@ -10,14 +10,17 @@ export function Logo({ showProjectLabel = false }: LogoProps) {
     <Link
       href="/"
       className="flex min-w-0 items-center gap-2.5 font-semibold text-sidebar-foreground"
+      aria-label="KBU Smart Attendance System"
     >
       <div className="shrink-0 rounded-lg bg-primary p-1.5">
         <GraduationCap className="size-5 text-primary-foreground" />
       </div>
       <span className="hidden min-w-0 sm:block">
-        <span className="block text-sm leading-tight">KBU Smart Attendance System</span>
+        <span className="block whitespace-nowrap text-sm leading-4">KBU Smart Attendance</span>
         {showProjectLabel && (
-          <span className="mt-0.5 block text-[10px] font-medium uppercase tracking-wide text-sidebar-foreground/65">
+          <span
+            className="block whitespace-nowrap text-[9px] font-medium uppercase leading-3 tracking-[0.08em] text-sidebar-foreground/65"
+          >
             Academic Seminar Project
           </span>
         )}

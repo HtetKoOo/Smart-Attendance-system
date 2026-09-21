@@ -1,7 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import { AlertCircle } from "lucide-react";
 
 export interface Column<T> {
   key: string;
@@ -30,8 +32,41 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      <div
+        className="overflow-hidden rounded-lg border border-border"
+        role="status"
+        aria-label="Loading table data"
+      >
+        <div
+          className="grid gap-4 border-b border-border bg-muted px-4 py-3"
+          style={{ gridTemplateColumns: `repeat(${columns.length + (onEdit || onDelete ? 1 : 0)}, minmax(7rem, 1fr))` }}
+        >
+          {columns.map((column) => (
+            <Skeleton key={column.key} className="h-4 w-20" />
+          ))}
+          {(onEdit || onDelete) && <Skeleton className="ml-auto h-4 w-16" />}
+        </div>
+        <div className="space-y-0">
+          {Array.from({ length: 5 }, (_, rowIndex) => (
+            <div
+              key={rowIndex}
+              className="grid gap-4 border-b border-border/50 px-4 py-4 last:border-0"
+              style={{ gridTemplateColumns: `repeat(${columns.length + (onEdit || onDelete ? 1 : 0)}, minmax(7rem, 1fr))` }}
+            >
+              {columns.map((column, columnIndex) => (
+                <Skeleton
+                  key={column.key}
+                  className={cn(
+                    "h-4",
+                    columnIndex % 2 === 0 ? "w-24" : "w-32",
+                  )}
+                />
+              ))}
+              {(onEdit || onDelete) && <Skeleton className="ml-auto h-8 w-24" />}
+            </div>
+          ))}
+        </div>
+        <span className="sr-only">Loading…</span>
       </div>
     );
   }
