@@ -7,9 +7,6 @@ import {
 import { requireRole } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 
-// If LATE needs to be calculated automatically in a future phase, it can be implemented using this constant.
-export const LATE_GRACE_MINUTES = 15;
-
 export async function POST(request: NextRequest) {
   try {
     const session = await requireRole(["ADMIN", "LECTURER"]);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { mirrorOverlayX } from "@/lib/camera-overlay";
 import type * as FaceApiTypes from "@vladmandic/face-api";
 import {
   AMBIGUITY_MARGIN,
@@ -258,7 +259,13 @@ export function useAttendanceRecognition(
                 ctx.lineWidth = 2.5;
                 ctx.strokeStyle = "#ef4444";
                 ctx.beginPath();
-                ctx.roundRect(b.x * scaleX, b.y * scaleY, b.width * scaleX, b.height * scaleY, 8);
+                ctx.roundRect(
+                  mirrorOverlayX(displayW, b.x * scaleX, b.width * scaleX),
+                  b.y * scaleY,
+                  b.width * scaleX,
+                  b.height * scaleY,
+                  8,
+                );
                 ctx.stroke();
               }
             }
@@ -304,7 +311,11 @@ export function useAttendanceRecognition(
               if (ctx && vw > 0) {
                 const scaleX = displayW / vw;
                 const scaleY = displayH / vh;
-                const bx = box.x * scaleX;
+                const bx = mirrorOverlayX(
+                  displayW,
+                  box.x * scaleX,
+                  box.width * scaleX,
+                );
                 const by = box.y * scaleY;
                 const bw = box.width * scaleX;
                 const bh = box.height * scaleY;
@@ -392,7 +403,11 @@ export function useAttendanceRecognition(
                 const scaleX = displayW / vw;
                 const scaleY = displayH / vh;
                 const b = detection.detection.box;
-                const bx = b.x * scaleX;
+                const bx = mirrorOverlayX(
+                  displayW,
+                  b.x * scaleX,
+                  b.width * scaleX,
+                );
                 const by = b.y * scaleY;
                 const bw = b.width * scaleX;
                 const bh = b.height * scaleY;

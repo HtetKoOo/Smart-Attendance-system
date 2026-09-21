@@ -6,12 +6,12 @@ import {
   CheckCircle2,
   Download,
   FileBarChart,
-  Loader2,
   RefreshCw,
   Search,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Schedule = {
   id: string;
@@ -363,14 +363,23 @@ export function AttendanceReportContent() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {loadingReport ? (
-                <tr>
-                  <td colSpan={5} className="px-5 py-12 text-center text-muted-foreground">
-                    <Loader2 className="mr-2 inline size-4 animate-spin" />
-                    Loading report…
-                  </td>
-                </tr>
-              ) : visibleRecords.length === 0 ? (
+{loadingReport ? (
+  Array.from({ length: 5 }, (_, index) => (
+    <tr key={`report-skeleton-${index}`}>
+      <td className="px-5 py-4">
+        <Skeleton className="h-4 w-28" />
+        <Skeleton className="mt-2 h-3 w-20" />
+      </td>
+      <td className="px-5 py-4">
+        <Skeleton className="h-4 w-16" />
+        <Skeleton className="mt-2 h-3 w-40" />
+      </td>
+      <td className="px-5 py-4"><Skeleton className="h-4 w-24" /></td>
+      <td className="px-5 py-4"><Skeleton className="h-4 w-20" /></td>
+      <td className="px-5 py-4"><Skeleton className="h-6 w-16 rounded-full" /></td>
+    </tr>
+  ))
+) : visibleRecords.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-5 py-12 text-center text-muted-foreground">
                     No attendance records match these filters.
@@ -437,7 +446,7 @@ function SummaryCard({
         <div>
           <p className="text-sm font-medium text-muted-foreground">{label}</p>
           {loading ? (
-            <Loader2 className="mt-3 size-6 animate-spin text-muted-foreground" />
+            <Skeleton className="mt-3 h-8 w-16" />
           ) : (
             <p className="mt-2 text-3xl font-bold">{value}</p>
           )}

@@ -322,8 +322,9 @@ export function AttendanceRecordContent() {
                   playsInline
                   autoPlay
                   muted
+                  style={{ transform: "scaleX(-1)" }}
                 />
-                  <canvas
+                <canvas
                   ref={canvasRef}
                   className="absolute top-0 left-0 w-full h-full pointer-events-none"
                 />

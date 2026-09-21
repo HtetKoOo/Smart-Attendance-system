@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { mirrorOverlayX } from "@/lib/camera-overlay";
 import type { FaceDetector as FaceDetectorType } from "@mediapipe/tasks-vision";
 
 export interface DetectionResult {
@@ -191,7 +192,11 @@ export function useFaceDetector(
                   const box = face.boundingBox;
                   if (!box) continue;
 
-                  const x = box.originX * scaleX;
+                  const x = mirrorOverlayX(
+                    displayWidth,
+                    box.originX * scaleX,
+                    box.width * scaleX,
+                  );
                   const y = box.originY * scaleY;
                   const width = box.width * scaleX;
                   const height = box.height * scaleY;

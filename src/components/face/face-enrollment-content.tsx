@@ -64,6 +64,7 @@ function useEnrolledStudents() {
 export function FaceEnrollmentContent() {
   const [selectedStudent, setSelectedStudent] = useState<StudentItem | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const { enrolledStudentIds, templateCounts, refetchEnrolled } = useEnrolledStudents();
@@ -94,17 +95,43 @@ export function FaceEnrollmentContent() {
   } = useFaceEnrollment(videoRef, isCameraActive);
 
   const handleStudentSelect = (student: StudentItem | null) => {
+    stopCamera();
     setSelectedStudent(student);
     resetEnrollmentState();
     setDeleteError(null);
+    setShowDeleteConfirm(false);
+    setShowReplaceConfirm(false);
   };
 
-  const handleCapture = async () => {
+  const isSelectedEnrolled =
+    selectedStudent && enrolledStudentIds.includes(selectedStudent.id);
+
+  const selectedTemplateCount = selectedStudent
+    ? (templateCounts[selectedStudent.id] ?? 0)
+    : 0;
+
+  const handleStartCamera = async () => {
     if (!selectedStudent) return;
+    resetEnrollmentState();
+    await startCamera();
+  };
+
+  const captureSelectedStudent = async () => {
+    if (!selectedStudent) return;
+    setShowReplaceConfirm(false);
     const success = await captureEnrollment(selectedStudent.id);
     if (success) {
       refetchEnrolled();
     }
+  };
+
+  const handleCapture = () => {
+    if (!selectedStudent) return;
+    if (isSelectedEnrolled) {
+      setShowReplaceConfirm(true);
+      return;
+    }
+    void captureSelectedStudent();
   };
 
   const handleDeleteEnrollment = async () => {
@@ -120,6 +147,7 @@ export function FaceEnrollmentContent() {
         throw new Error(data.error || "Failed to delete enrollment data.");
       }
       setShowDeleteConfirm(false);
+      stopCamera();
       resetEnrollmentState();
       refetchEnrolled();
     } catch (err: unknown) {
@@ -128,9 +156,6 @@ export function FaceEnrollmentContent() {
       );
     }
   };
-
-  const isSelectedEnrolled =
-    selectedStudent && enrolledStudentIds.includes(selectedStudent.id);
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -172,10 +197,25 @@ export function FaceEnrollmentContent() {
 
       {/* Camera & Enrollment Viewport Card */}
       <div className="border border-border bg-card rounded-2xl overflow-hidden shadow-sm">
-        <div className="px-5 py-3.5 border-b border-border flex items-center justify-between bg-muted/40">
-          <div className="flex items-center gap-2">
-            <Camera className="size-4 text-primary" />
-            <span className="font-semibold text-sm">Face Alignment Viewport</span>
+        <div className="px-5 py-3.5 border-b border-border flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-muted/40">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <Camera className="size-4 text-primary shrink-0" />
+              <span className="font-semibold text-sm">Face Alignment Viewport</span>
+            </div>
+            {selectedStudent ? (
+              <p className="mt-1 text-xs text-muted-foreground truncate sm:pl-6">
+                <strong className="text-foreground">{selectedStudent.user.name}</strong>
+                {" · "}{selectedStudent.studentId}{" · "}
+                {selectedTemplateCount > 0
+                  ? `${selectedTemplateCount} template${selectedTemplateCount === 1 ? "" : "s"} enrolled`
+                  : "Not enrolled"}
+              </p>
+            ) : (
+              <p className="mt-1 text-xs text-amber-600 dark:text-amber-400 sm:pl-6">
+                Select a student before starting the camera
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-2.5">
@@ -203,6 +243,7 @@ export function FaceEnrollmentContent() {
             autoPlay
             playsInline
             muted
+            style={{ transform: "scaleX(-1)" }}
             className={`w-full h-full object-cover transition-opacity duration-300 ${
               isCameraActive ? "opacity-100" : "opacity-0 absolute"
             }`}
@@ -228,6 +269,18 @@ export function FaceEnrollmentContent() {
                   <AlertCircle className="size-8" />
                   <p className="font-semibold text-sm text-foreground">Camera Access Issue</p>
                   <p className="text-xs text-muted-foreground">{cameraError}</p>
+                </div>
+              ) : !selectedStudent ? (
+                <div className="flex flex-col items-center gap-3 text-neutral-400">
+                  <div className="p-4 bg-neutral-900 border border-neutral-800 rounded-full text-neutral-400">
+                    <UserCheck className="size-8" />
+                  </div>
+                  <p className="font-medium text-sm text-neutral-200">
+                    Select a student first
+                  </p>
+                  <p className="text-xs text-neutral-500 max-w-xs">
+                    Choose the student above. Camera access will become available after selection.
+                  </p>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-3 text-neutral-400">
@@ -296,8 +349,8 @@ export function FaceEnrollmentContent() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={startCamera}
-                disabled={isCameraLoading}
+                onClick={handleStartCamera}
+                disabled={!selectedStudent || isCameraLoading || !isModelReady}
               >
                 <Play className="mr-2 size-4 fill-current" />
                 Start Camera
@@ -345,7 +398,7 @@ export function FaceEnrollmentContent() {
             ) : isSelectedEnrolled ? (
               <>
                 <RotateCcw className="mr-2 size-4" />
-                Re-Enroll Face Template
+                Replace Face Templates
               </>
             ) : (
               <>
@@ -400,6 +453,18 @@ export function FaceEnrollmentContent() {
           isDestructive
           onConfirm={handleDeleteEnrollment}
           onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
+
+      {/* Existing Enrollment Replacement Confirmation Dialog */}
+      {showReplaceConfirm && selectedStudent && (
+        <ConfirmDialog
+          title="Replace Face Templates"
+          description={`This student already has ${selectedTemplateCount} face template${selectedTemplateCount === 1 ? "" : "s"}. A successful re-enrollment will replace them with three new templates captured from the current session. If saving fails, the existing templates will remain unchanged.`}
+          confirmText="Start Re-Enrollment"
+          cancelText="Cancel"
+          onConfirm={captureSelectedStudent}
+          onCancel={() => setShowReplaceConfirm(false)}
         />
       )}
     </div>

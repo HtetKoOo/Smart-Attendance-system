@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
-import { LucideIcon } from "lucide-react";
+import { Loader2, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItemProps {
@@ -13,6 +13,21 @@ interface NavItemProps {
   comingSoon?: boolean;
   showLabel?: boolean;
   exact?: boolean;
+}
+
+function NavigationPendingIndicator() {
+  const { pending } = useLinkStatus();
+
+  return (
+    <span className="ml-auto flex size-4 shrink-0 items-center justify-center" aria-hidden>
+      <Loader2
+        className={cn(
+          "size-3.5 animate-spin transition-opacity",
+          pending ? "opacity-70" : "opacity-0",
+        )}
+      />
+    </span>
+  );
 }
 
 export function NavItem({
@@ -42,10 +57,12 @@ export function NavItem({
     >
       <Icon className="size-4" />
       <span className={showLabel ? "inline" : "hidden md:inline"}>{label}</span>
-      {comingSoon && (
+      {comingSoon ? (
         <span className={showLabel ? "ml-auto text-xs text-muted-foreground" : "ml-auto hidden text-xs text-muted-foreground md:inline"}>
           Soon
         </span>
+      ) : (
+        <NavigationPendingIndicator />
       )}
     </Link>
   );
