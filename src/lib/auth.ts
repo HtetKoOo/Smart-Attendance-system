@@ -2,6 +2,20 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "@/lib/prisma";
 
+const authSecret = process.env.BETTER_AUTH_SECRET;
+if (!authSecret || authSecret.length < 32) {
+  throw new Error(
+    "BETTER_AUTH_SECRET must be configured with at least 32 characters.",
+  );
+}
+
+const authBaseURL = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL;
+if (process.env.NODE_ENV === "production" && !authBaseURL) {
+  throw new Error(
+    "BETTER_AUTH_URL or NEXT_PUBLIC_APP_URL must be configured in production.",
+  );
+}
+
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
@@ -20,8 +34,8 @@ export const auth = betterAuth({
       },
     },
   },
-  baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-  secret: process.env.BETTER_AUTH_SECRET || "default_development_secret_change_in_production_min_32_chars",
+  baseURL: authBaseURL || "http://localhost:3000",
+  secret: authSecret,
 });
 
 export type Session = typeof auth.$Infer.Session;

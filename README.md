@@ -16,9 +16,9 @@ This is an academic and portfolio project. Face recognition is an assistive atte
 
 | Role | Capabilities |
 | --- | --- |
-| **Admin** | Manage student and lecturer profiles, courses, classrooms, schedules, enrollments, face enrollment, recognition calibration, attendance recording, and CSV-ready history reports. |
-| **Lecturer** | View students enrolled in assigned courses, record attendance, and review history only for schedules assigned to that lecturer. |
-| **Student** | Create an account and access the student dashboard. |
+| **Admin** | Manage student and lecturer profiles, courses, classrooms, schedules, enrollments, face enrollment, recognition calibration, attendance recording, CSV-ready history reports, and account settings. |
+| **Lecturer** | View assigned courses, weekly teaching schedule, enrolled students, record attendance, review history only for assigned schedules, and manage account settings. |
+| **Student** | View enrolled courses, weekly class schedule, personal attendance history, face-enrollment readiness, and account settings. |
 
 ### Academic management
 
@@ -84,6 +84,9 @@ flowchart LR
 - Recognition runs in an authorized browser after templates are loaded through protected API routes.
 - Admin-only enrollment and calibration routes enforce server-side role checks.
 - Attendance recording validates roles, lecturer ownership, schedule enrollment, input shape, date format, and duplicate records on the server.
+- Production startup fails closed when the Better Auth secret is missing or shorter than 32 characters, or when no public authentication URL is configured.
+- Global response headers block framing and MIME sniffing, restrict camera access to this application, and disable unused microphone and geolocation access.
+- Account settings use a strict field allowlist so profile edits cannot change protected values such as role or email.
 
 ## Getting Started
 
@@ -149,7 +152,7 @@ pnpm test
 pnpm build
 ```
 
-GitHub Actions runs the same lint, typecheck, unit-test, and production-build checks on every push and pull request.
+GitHub Actions runs the same lint, typecheck, unit-test, and production-build checks on every push and pull request. The unit suite currently covers face-match selection and ambiguity handling, account-settings validation, and attendance authorization, date, and duplicate-error rules.
 
 ## Demo Flow
 
@@ -176,14 +179,14 @@ For a stronger portfolio presentation, add screenshots in `docs/screenshots/` an
 ## Current Limitations and Future Work
 
 - No liveness detection or anti-spoofing; the system must not be used as a high-security identity system.
-- Automatic late-status evaluation and student attendance self-service are future enhancements.
+- Automatic late-status evaluation remains a future enhancement.
 - Threshold values need controlled, consented real-world calibration before broader use.
-- Automated unit, API integration, and end-to-end test coverage are planned.
+- Security-sensitive pure logic has unit coverage in CI; broader API integration and browser end-to-end coverage are planned.
 - A formal biometric consent, retention, deletion, and access policy is required before institutional deployment.
 
 ## Project Status
 
-The core academic workflow, multi-template enrollment, local recognition test, protected attendance recording, and admin attendance reporting are complete as a portfolio-ready prototype. The project is actively being improved with stronger testing and production hardening.
+The core academic workflow, multi-template enrollment, local recognition test, protected attendance recording, role-scoped reports, and student self-service pages are complete as a portfolio-ready prototype. The project is actively being improved with broader testing and production hardening.
 
 ## License
 

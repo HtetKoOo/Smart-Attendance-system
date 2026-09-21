@@ -25,6 +25,7 @@ interface NavItemConfig {
   icon: LucideIcon;
   label: string;
   comingSoon?: boolean;
+  exact?: boolean;
 }
 
 interface NavSection {
@@ -40,8 +41,11 @@ interface SidebarProps {
 
 export function Sidebar({ role, mobileOpen = false, onMobileClose }: SidebarProps) {
   const getNavItems = () => {
+    const dashboardHref = role
+      ? `/dashboard/${role.toLowerCase()}`
+      : "/dashboard";
     const baseItems: NavItemConfig[] = [
-      { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+      { href: dashboardHref, icon: LayoutDashboard, label: "Dashboard", exact: true },
     ];
 
     if (role === "ADMIN") {
@@ -106,7 +110,6 @@ export function Sidebar({ role, mobileOpen = false, onMobileClose }: SidebarProp
           href: "/dashboard/admin/settings",
           icon: Settings,
           label: "Settings",
-          comingSoon: true,
         },
       ];
     }
@@ -128,13 +131,11 @@ export function Sidebar({ role, mobileOpen = false, onMobileClose }: SidebarProp
           href: "/dashboard/lecturer/courses",
           icon: BookOpen,
           label: "My Courses",
-          comingSoon: true,
         },
         {
           href: "/dashboard/lecturer/schedule",
           icon: Clock,
           label: "My Schedule",
-          comingSoon: true,
         },
         {
           href: "/dashboard/lecturer/attendance",
@@ -145,7 +146,6 @@ export function Sidebar({ role, mobileOpen = false, onMobileClose }: SidebarProp
           href: "/dashboard/lecturer/settings",
           icon: Settings,
           label: "Settings",
-          comingSoon: true,
         },
       ];
     }
@@ -157,25 +157,21 @@ export function Sidebar({ role, mobileOpen = false, onMobileClose }: SidebarProp
           href: "/dashboard/student/courses",
           icon: BookOpen,
           label: "My Courses",
-          comingSoon: true,
         },
         {
           href: "/dashboard/student/schedule",
           icon: Clock,
           label: "My Schedule",
-          comingSoon: true,
         },
         {
           href: "/dashboard/student/attendance",
           icon: BarChart3,
           label: "My Attendance",
-          comingSoon: true,
         },
         {
           href: "/dashboard/student/settings",
           icon: Settings,
           label: "Settings",
-          comingSoon: true,
         },
       ];
     }
@@ -188,7 +184,7 @@ export function Sidebar({ role, mobileOpen = false, onMobileClose }: SidebarProp
   const navSections: NavSection[] =
     role === "ADMIN"
       ? [
-          { items: navItems.filter((item) => item.href === "/dashboard") },
+          { items: navItems.filter((item) => item.label === "Dashboard") },
           {
             label: "Academic Management",
             items: navItems.filter((item) =>
@@ -248,6 +244,7 @@ export function Sidebar({ role, mobileOpen = false, onMobileClose }: SidebarProp
                   label={item.label}
                   comingSoon={item.comingSoon}
                   showLabel={showLabel}
+                  exact={item.exact}
                 />
               </div>
             ))}
@@ -260,7 +257,7 @@ export function Sidebar({ role, mobileOpen = false, onMobileClose }: SidebarProp
   return (
     <>
       <aside className="fixed left-0 top-0 z-50 hidden h-screen w-64 border-r border-sidebar-border bg-sidebar lg:flex lg:flex-col">
-        <div className="border-b border-sidebar-border p-4">
+        <div className="flex h-16 shrink-0 items-center border-b border-sidebar-border px-4">
           <Logo />
         </div>
         {navigation()}
@@ -275,7 +272,7 @@ export function Sidebar({ role, mobileOpen = false, onMobileClose }: SidebarProp
             onClick={onMobileClose}
           />
           <aside className="relative flex h-full w-72 flex-col border-r border-sidebar-border bg-sidebar shadow-xl">
-            <div className="border-b border-sidebar-border p-4">
+            <div className="flex h-16 shrink-0 items-center border-b border-sidebar-border px-4">
               <Logo />
             </div>
             {navigation(true, onMobileClose)}

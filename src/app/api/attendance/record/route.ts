@@ -1,4 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  canRecordScheduleAttendance,
+  isUniqueConstraintError,
+  parseAttendanceDate,
+} from "@/lib/attendance-security";
 import { requireRole } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 
@@ -8,7 +13,7 @@ export const LATE_GRACE_MINUTES = 15;
 export async function POST(request: NextRequest) {
   try {
     const session = await requireRole(["ADMIN", "LECTURER"]);
-    const userRole = session.user.role;
+    const userRole = session.user.role as "ADMIN" | "LECTURER";
 
     // Enforce payload size limit
     const MAX_BODY_BYTES = 10 * 1024; // 10 KB limit to prevent large payloads (e.g. embeddings or images)
@@ -18,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     const rawText = await request.text();
-    if (rawText.length > MAX_BODY_BYTES) {
+    if (new TextEncoder().encode(rawText).byteLength > MAX_BODY_BYTES) {
       return NextResponse.json({ error: "Payload too large" }, { status: 413 });
     }
 
@@ -27,6 +32,10 @@ export async function POST(request: NextRequest) {
       body = JSON.parse(rawText);
     } catch {
       return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    }
+
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
     }
 
     // Strict allowlist validation
@@ -50,27 +59,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid payload fields" }, { status: 400 });
     }
 
-    // Validate date format (YYYY-MM-DD)
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(date)) {
-      return NextResponse.json({ error: "Invalid date format, expected YYYY-MM-DD" }, { status: 400 });
-    }
-
-    // Parse date and ensure it's not in the future (allow small drift)
-    const requestDate = new Date(date);
-    if (isNaN(requestDate.getTime())) {
-      return NextResponse.json({ error: "Invalid date value" }, { status: 400 });
-    }
-    
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    
-    // We allow up to tomorrow to handle simple timezone offsets, but reject far future.
-    const maxFutureDate = new Date(today);
-    maxFutureDate.setDate(maxFutureDate.getDate() + 1);
-
-    if (requestDate > maxFutureDate) {
-      return NextResponse.json({ error: "Cannot record attendance for future dates" }, { status: 400 });
+    const attendanceDate = parseAttendanceDate(date);
+    if (!attendanceDate) {
+      return NextResponse.json({ error: "Invalid or future attendance date" }, { status: 400 });
     }
 
     // Verify schedule exists
@@ -82,14 +73,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Schedule not found" }, { status: 404 });
     }
 
-    // If Lecturer, verify ownership
+    let lecturerId: string | null = null;
     if (userRole === "LECTURER") {
       const lecturer = await prisma.lecturer.findUnique({
         where: { userId: session.user.id },
+        select: { id: true },
       });
-      if (!lecturer || schedule.lecturerId !== lecturer.id) {
-        return NextResponse.json({ error: "Forbidden: Not your schedule" }, { status: 403 });
-      }
+      lecturerId = lecturer?.id ?? null;
+    }
+
+    if (!canRecordScheduleAttendance({
+      role: userRole,
+      lecturerId,
+      scheduleLecturerId: schedule.lecturerId,
+    })) {
+      return NextResponse.json({ error: "Forbidden: Not your schedule" }, { status: 403 });
     }
 
     // Verify student exists
@@ -116,7 +114,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Create or find existing attendance record atomically
-    const attendanceDate = new Date(date); // Store at midnight UTC for consistency with DB Date type
     const now = new Date();
 
     try {
@@ -136,12 +133,7 @@ export async function POST(request: NextRequest) {
         attendance 
       }, { status: 201 });
     } catch (dbError) {
-      if (
-        dbError && 
-        typeof dbError === "object" && 
-        "code" in dbError && 
-        (dbError as Record<string, unknown>).code === "P2002"
-      ) {
+      if (isUniqueConstraintError(dbError)) {
         const existingAttendance = await prisma.attendance.findUnique({
           where: {
             studentId_classScheduleId_date: {
