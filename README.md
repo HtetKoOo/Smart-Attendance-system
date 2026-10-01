@@ -10,6 +10,18 @@ KBU Smart Attendance System helps administrators and lecturers manage academic d
 
 This is an academic seminar and portfolio project, not an official university production service. Face recognition is an assistive attendance workflow, not an identity-verification or anti-spoofing system.
 
+## Public Demo Access
+
+The deployed portfolio includes fictional, resettable demo records. Use the same password for each account:
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Admin | `demo.admin@kbu-attendance.example` | `KbuDemo2026!` |
+| Lecturer | `demo.lecturer@kbu-attendance.example` | `KbuDemo2026!` |
+| Student | `demo.student@kbu-attendance.example` | `KbuDemo2026!` |
+
+The Admin demo account can edit public sample data. Run `pnpm seed:demo` again to restore deleted or modified demo records. No biometric templates are seeded; use only consented test faces when demonstrating enrollment and recognition.
+
 ## Key Features
 
 ### Role-based workflows
