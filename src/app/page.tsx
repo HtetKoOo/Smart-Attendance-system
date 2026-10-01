@@ -1,3 +1,4 @@
+import { DemoCredentials } from "@/components/common/demo-credentials";
 import { Logo } from "@/components/common/logo";
 import { Button } from "@/components/ui/button";
 import { getSession } from "@/lib/session";
@@ -9,6 +10,7 @@ import {
   Clock,
   ClipboardCheck,
   GraduationCap,
+  ExternalLink,
 } from "lucide-react";
 
 export default async function Home() {
@@ -58,11 +60,25 @@ export default async function Home() {
             official university production service.
           </p>
 
-          <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-            <Link href="/login">
-              <Button size="lg">Get Started</Button>
-            </Link>
-          </div>
+<div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+  <Link href="/login">
+    <Button size="lg">Try Demo</Button>
+  </Link>
+  <a
+    href="https://github.com/HtetKoOo/Smart-Attendance-system"
+    target="_blank"
+    rel="noreferrer"
+  >
+    <Button size="lg" variant="outline">
+      <ExternalLink className="mr-2 size-4" />
+      View Source Code
+    </Button>
+  </a>
+</div>
+
+<div className="mx-auto mt-8 max-w-2xl">
+  <DemoCredentials />
+</div>
         </div>
       </section>
 

@@ -1,5 +1,6 @@
 import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
+import { DemoCredentials } from "@/components/common/demo-credentials";
 import { LoginForm } from "@/components/forms/login-form";
 import Link from "next/link";
 
@@ -28,6 +29,8 @@ export default async function LoginPage() {
       </div>
 
       <LoginForm />
+
+      <DemoCredentials />
 
       <div className="text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}
