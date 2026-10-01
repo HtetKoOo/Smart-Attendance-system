@@ -68,23 +68,27 @@ async function ensureDemoAccount(account: DemoAccount) {
     },
   });
 
-  await prisma.account.upsert({
-    where: {
-      issuer_accountId: {
-        issuer: credentialIssuer,
-        accountId: user.id,
-      },
-    },
-    create: {
+const credentialAccount = await prisma.account.findFirst({
+  where: { userId: user.id, providerId: "credential" },
+  select: { id: true },
+});
+
+if (credentialAccount) {
+  await prisma.account.update({
+    where: { id: credentialAccount.id },
+    data: { password: passwordHash },
+  });
+} else {
+  await prisma.account.create({
+    data: {
       userId: user.id,
       providerId: "credential",
       issuer: credentialIssuer,
       accountId: user.id,
       password: passwordHash,
     },
-    update: { password: passwordHash },
   });
-
+}
   if (account.profile?.type === "lecturer") {
     await prisma.lecturer.upsert({
       where: { userId: user.id },
